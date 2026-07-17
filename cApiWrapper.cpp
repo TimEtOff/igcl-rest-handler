@@ -17,9 +17,6 @@
 // Also at this point, it's easier by not enabling pre-compiled option to compile this file
 // Not all functionalities are tested for a UWP application
 
-#ifndef C_API_WRAPPER
-#define C_API_WRAPPER
-
 #include <windows.h>
 #include <strsafe.h>
 #include <vector>
@@ -5964,8 +5961,6 @@ ctlTemperatureGetState(
 
     return result;
 }
-
-#endif // C_API_WRAPPER
 
 
 //

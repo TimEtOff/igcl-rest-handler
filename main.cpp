@@ -16,6 +16,26 @@ std::string getReadableVersion(uint64_t integer)
     return str;
 }
 
+std::string getTempSensorType(ctl_temp_sensors_t sensor)
+{
+    switch (sensor) {
+        case CTL_TEMP_SENSORS_GLOBAL:
+            return "Global max temp";
+        case CTL_TEMP_SENSORS_GPU:
+            return "GPU max temp";
+        case CTL_TEMP_SENSORS_MEMORY:
+            return "Local memory max temp";
+        case CTL_TEMP_SENSORS_GLOBAL_MIN:
+            return "Global min temp";
+        case CTL_TEMP_SENSORS_GPU_MIN:
+            return "GPU min temp";
+        case CTL_TEMP_SENSORS_MEMORY_MIN:
+            return "Local memory min temp";
+        default:
+            return "Unrecognized";
+    }
+}
+
 void init()
 {
     ctl_init_args_t CtlInitArgs;
@@ -64,6 +84,33 @@ void init()
             std::cout << " | version: " << getReadableVersion(StDeviceAdapterProperties.driver_version) << ")" << std::endl;
 
             free(StDeviceAdapterProperties.pDeviceID);
+
+            uint32_t pSensorCount;
+            ctl_temp_handle_t *phTemps = nullptr;
+            ctlEnumTemperatureSensors(hDevices[index], &pSensorCount, phTemps);
+            phTemps = (ctl_temp_handle_t *)malloc(sizeof(ctl_temp_handle_t) * pSensorCount);
+            ctlEnumTemperatureSensors(hDevices[index], &pSensorCount, phTemps);
+
+            std::cout << "  Sensor count: " << pSensorCount << std::endl;
+
+            for (int iSens = 0; iSens < pSensorCount; iSens++) {
+                double temp;
+
+                ctl_temp_properties_t tempProp;
+                tempProp.Size = sizeof(ctl_temp_properties_t);
+                tempProp.Version = 0;
+
+                ctl_result_t resTemp = ctlTemperatureGetProperties(phTemps[iSens], &tempProp);
+
+                if (resTemp == CTL_RESULT_SUCCESS) {
+                    ctlTemperatureGetState(phTemps[iSens], &temp);
+                    std::cout << "  " << getTempSensorType(tempProp.type) << ": " << temp << "°C - Max: " << tempProp.maxTemperature << "°C" << std::endl;
+                } else {
+                    std::cout << "  Error: " << "0x" << std::hex << resTemp << std::endl;
+                }
+            }
+
+            free(phTemps);
         }
 
         free(hDevices);
@@ -86,7 +133,6 @@ int main(int argc, char *argv[])
     // to app.exec() or use the Non-Qt Plain C++ Application template.
 
     init();
-    
 
     //return app.exec();
     return 0;
