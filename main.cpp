@@ -1,7 +1,8 @@
+#include <magic_enum/magic_enum.hpp>
 #include <iostream>
 #include <string>
 #include <QCoreApplication>
-#include "cApiWrapper.cpp"
+#include "igcl/cApiWrapper.cpp"
 
 std::string getReadableVersion(uint64_t integer)
 {
@@ -73,14 +74,7 @@ void init()
             StDeviceAdapterProperties.device_id_size = sizeof(LUID);
             ctlGetDeviceProperties(hDevices[index], &StDeviceAdapterProperties);
             std::cout << index << ": " << StDeviceAdapterProperties.name;
-            switch (StDeviceAdapterProperties.device_type) {
-                case CTL_DEVICE_TYPE_GRAPHICS:
-                    std::cout << " (type: Graphics";
-                    break;
-                case CTL_DEVICE_TYPE_SYSTEM:
-                    std::cout << " (type: System";
-                    break;
-            }
+            std::cout << " (type: " << magic_enum::enum_name(StDeviceAdapterProperties.device_type);
             std::cout << " | version: " << getReadableVersion(StDeviceAdapterProperties.driver_version) << ")" << std::endl;
 
             free(StDeviceAdapterProperties.pDeviceID);
@@ -104,7 +98,7 @@ void init()
 
                 if (resTemp == CTL_RESULT_SUCCESS) {
                     ctlTemperatureGetState(phTemps[iSens], &temp);
-                    std::cout << "  " << getTempSensorType(tempProp.type) << ": " << temp << "°C - Max: " << tempProp.maxTemperature << "°C" << std::endl;
+                    std::cout << "  " << magic_enum::enum_name(tempProp.type) << ": " << temp << "°C - Max: " << tempProp.maxTemperature << "°C" << std::endl;
                 } else {
                     std::cout << "  Error: " << "0x" << std::hex << resTemp << std::endl;
                 }
