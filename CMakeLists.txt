@@ -10,15 +10,14 @@ find_package(Qt6 REQUIRED COMPONENTS Core)
 include(cmake/CPM.cmake)
 
 CPMAddPackage(
-    NAME igcl
-    GITHUB_REPOSITORY intel/drivers.gpu.control-library
-    GIT_TAG master
-)
-
-CPMAddPackage(
     NAME magic_enum
     GITHUB_REPOSITORY Neargye/magic_enum
     GIT_TAG v0.9.8
+)
+
+CPMAddPackage(
+    NAME boost
+    URL "https://github.com/boostorg/boost/releases/download/boost-1.91.0-1/boost-1.91.0-1-cmake.tar.gz"
 )
 
 qt_standard_project_setup()
@@ -30,6 +29,10 @@ qt_add_executable(igcl-rest-handler
 target_link_libraries(igcl-rest-handler
     PRIVATE
         magic_enum::magic_enum
+        Boost::beast
+        Boost::json
+    ws2_32
+    mswsock
 )
 
 install(TARGETS igcl-rest-handler

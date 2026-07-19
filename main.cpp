@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <QCoreApplication>
+#include "http_server_async.cpp"
 #include "igcl/cApiWrapper.cpp"
 
 std::string getReadableVersion(uint64_t integer)
@@ -15,26 +16,6 @@ std::string getReadableVersion(uint64_t integer)
     str += std::to_string(LOWORD(version.LowPart));
 
     return str;
-}
-
-std::string getTempSensorType(ctl_temp_sensors_t sensor)
-{
-    switch (sensor) {
-        case CTL_TEMP_SENSORS_GLOBAL:
-            return "Global max temp";
-        case CTL_TEMP_SENSORS_GPU:
-            return "GPU max temp";
-        case CTL_TEMP_SENSORS_MEMORY:
-            return "Local memory max temp";
-        case CTL_TEMP_SENSORS_GLOBAL_MIN:
-            return "Global min temp";
-        case CTL_TEMP_SENSORS_GPU_MIN:
-            return "GPU min temp";
-        case CTL_TEMP_SENSORS_MEMORY_MIN:
-            return "Local memory min temp";
-        default:
-            return "Unrecognized";
-    }
 }
 
 void init()
@@ -127,6 +108,7 @@ int main(int argc, char *argv[])
     // to app.exec() or use the Non-Qt Plain C++ Application template.
 
     init();
+    http_main(argc, argv);
 
     //return app.exec();
     return 0;
