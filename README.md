@@ -23,16 +23,21 @@ Default port is `9738` (TCP).
 
 The API works by layers, for exemple:
 
-* to get the list of all available devices: `GET /device/`
-* to get information about the second sensor of the first device: `GET /device/0/temp/1/`
-* to set the speed of the first fan on the first device: `POST /device/0/fan/0/set/`
+* to get the list of all available devices: `GET /device`
+* to get information about the second sensor of the first device: `GET /device/0/temp/1`
+* to set the speed of the first fan on the first device: `POST /device/0/fan/0/speed`
 
 > [!NOTE]
-> For every GET request, all fields are returned by default, but you can retrieve only specific ones if you define them as `true` in the request body.
-> In this case, every other will default to `false`.
+> For every GET request, all fields are returned by default, but you can retrieve only specific ones with adding `?fields=` to the query with fields names, separated by a comma.
 
 For the details of every methods, see related handle page:
 
 * [Devices 🢱](./device/device.md)
   * [Temperature sensors 🢱](./device/temp/temperature.md)
-  * ...
+  * [Frequence domains 🢱](./device/freq/frequence.md)
+  * [LEDs 🢱](./device/led/led.md)
+  * [Power domains 🢱](./device/power/power.md)
+  * [Fans 🢱](./device/fan/fan.md)
+  * [Memory modules 🢱](./device/memory/memory.md)
+  * [Engine groups 🢱](./device/engine/engine.md)
+  * [Display output 🢱](./device/display/display.md)

@@ -56,7 +56,8 @@ void init()
             ctlGetDeviceProperties(hDevices[index], &StDeviceAdapterProperties);
             std::cout << index << ": " << StDeviceAdapterProperties.name;
             std::cout << " (type: " << magic_enum::enum_name(StDeviceAdapterProperties.device_type);
-            std::cout << " | version: " << getReadableVersion(StDeviceAdapterProperties.driver_version) << ")" << std::endl;
+            std::cout << " | version: " << getReadableVersion(StDeviceAdapterProperties.driver_version);
+            std::cout << " | fcts: " << StDeviceAdapterProperties.supported_subfunction_flags << ")" << std::endl;
 
             free(StDeviceAdapterProperties.pDeviceID);
 
