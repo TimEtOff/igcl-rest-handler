@@ -89,7 +89,7 @@ ctl_result_t ctlFanGetConfig(ctl_fan_handle_t hFan, ctl_fan_config_t *pConfig)
 | &nbsp;&nbsp;&nbsp;&nbsp;units | The units that the fan speed is expressed in. On output, if fan speed is -1 then units should be ignored | string ([ctl_fan_speed_units_t](../../enums.md#ctl_fan_speed_units_t)) |
 | **speed_table** | A table containing temperature/speed pairs | object |
 | &nbsp;&nbsp;&nbsp;&nbsp;num_points | The number of valid points in the fan speed table. 0 means that there is no fan speed table configured. -1 means that a fan speed table is not supported by the hardware | int |
-| &nbsp;&nbsp;&nbsp;&nbsp;table | Array of temperature/fan speed pairs. The table is ordered based on temperature from lowest to highest | array[object] |
+| &nbsp;&nbsp;&nbsp;&nbsp;**table** | Array of temperature/fan speed pairs. The table is ordered based on temperature from lowest to highest | array[object] |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;temperature | Temperature in degrees Celsius | int |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**speed** | The speed of the fan | object |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;speed | The speed of the fan. On output, a value of -1 indicates that there is no fixed fan speed setting | int |
@@ -137,8 +137,6 @@ ctl_result_t ctlFanSetSpeedTableMode(ctl_fan_handle_t hFan, const ctl_fan_speed_
 **Fields**
 
 Returns the same output as [`GET /device/{i}/fan/{index}/config`](#get-fan-config).
-
-## ctlFanGetState
 
 ## Get fan state
 

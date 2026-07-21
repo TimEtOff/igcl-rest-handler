@@ -87,6 +87,36 @@ void init()
             }
 
             free(phTemps);
+
+            uint32_t pFansCount;
+            ctl_fan_handle_t *phFans = nullptr;
+            ctlEnumFans(hDevices[index], &pFansCount, phFans);
+            phFans = (ctl_fan_handle_t *)malloc(sizeof(ctl_fan_handle_t) * pFansCount);
+            ctlEnumFans(hDevices[index], &pFansCount, phFans);
+
+            std::cout << "  Fans count: " << pFansCount << std::endl;
+
+            for (int iFan = 0; iFan < pFansCount; iFan++) {
+                ctl_fan_config_t fanConfig;
+                fanConfig.Size = sizeof(ctl_fan_config_t);
+                fanConfig.Version = 0;
+
+                ctl_result_t resFan = ctlFanGetConfig(phFans[iFan], &fanConfig);
+
+                if (resFan == CTL_RESULT_SUCCESS) {
+                    int rpm;
+                    ctlFanGetState(phFans[iFan], ctl_fan_speed_units_t::CTL_FAN_SPEED_UNITS_RPM, &rpm);
+
+                    std::cout << "  Mode: " << magic_enum::enum_name(fanConfig.mode);
+                    std::cout << " " << rpm << " RPMs";
+                    std::cout << " (Fixed: " << fanConfig.speedFixed.speed << " " << magic_enum::enum_name(fanConfig.speedFixed.units);
+                    std::cout << " | Table: " << fanConfig.speedTable.numPoints << " points)" << std::endl;
+                } else {
+                    std::cout << "  Error: " << "0x" << std::hex << resFan << std::endl;
+                }
+            }
+
+            free(phFans);
         }
 
         free(hDevices);
