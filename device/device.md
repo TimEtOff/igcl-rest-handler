@@ -17,17 +17,17 @@ Returns a list of all available devices
 > [!WARNING]
 > Not yet implemented
 
-### Path
+**Path**
 
 `GET /device`
 
-### IGCL equivalent
+**IGCL equivalent**
 
 ```cpp
 ctl_result_t ctlEnumerateDevices(ctl_api_handle_t hAPIHandle, uint32_t *pCount, ctl_device_adapter_handle_t *phDevices)
 ```
 
-### Fields
+**Fields**
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
@@ -42,18 +42,18 @@ Returns a specific device properties. Indexes start at 0.
 > [!WARNING]
 > Not yet implemented
 
-### Path
+**Path**
 
 `GET /device/{index}`
 
-### IGCL equivalent
+**IGCL equivalent**
 
 ```cpp
 ctl_result_t ctlGetDeviceProperties(ctl_device_adapter_handle_t hDAhandle, ctl_device_adapter_properties_t *pProperties)
 ctl_result_t ctlDevPropGetProperties(ctl_device_adapter_handle_t hDAhandle, ctl_dev_prop_properties_t *pProperties)
 ```
 
-### Fields
+**Fields**
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |

@@ -17,17 +17,17 @@ Returns a list of all available fans
 > [!WARNING]
 > Not yet implemented
 
-### Path
+**Path**
 
 `GET /device/{i}/fan`
 
-### IGCL equivalent
+**IGCL equivalent**
 
 ```cpp
 ctl_result_t ctlEnumFans(ctl_device_adapter_handle_t hDAhandle, uint32_t *pCount, ctl_fan_handle_t *phFan)
 ```
 
-### Fields
+**Fields**
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
@@ -42,17 +42,17 @@ Returns a specific fan properties.
 > [!WARNING]
 > Not yet implemented
 
-### Path
+**Path**
 
 `GET /device/{i}/fan/{index}`
 
-### IGCL equivalent
+**IGCL equivalent**
 
 ```cpp
 ctl_result_t ctlFanGetProperties(ctl_fan_handle_t hFan, ctl_fan_properties_t *pProperties)
 ```
 
-### Fields
+**Fields**
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
@@ -69,17 +69,17 @@ Returns a fan configurations and the current fan speed mode (default, fixed, tem
 > [!WARNING]
 > Not yet implemented
 
-### Path
+**Path**
 
 `GET /device/{i}/fan/{index}/config`
 
-### IGCL equivalent
+**IGCL equivalent**
 
 ```cpp
 ctl_result_t ctlFanGetConfig(ctl_fan_handle_t hFan, ctl_fan_config_t *pConfig)
 ```
 
-### Fields
+**Fields**
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
@@ -106,11 +106,11 @@ With `mode` parameter set to `"CTL_FAN_SPEED_MODE_TABLE"`, configure the fan to 
 > [!WARNING]
 > Not yet implemented
 
-### Path
+**Path**
 
-`PUT /device/{i}/fan/{index}/config`
+`PATCH /device/{i}/fan/{index}/config`
 
-### IGCL equivalent
+**IGCL equivalent**
 
 ```cpp
 ctl_result_t ctlFanSetDefaultMode(ctl_fan_handle_t hFan)
@@ -118,7 +118,7 @@ ctl_result_t ctlFanSetFixedSpeedMode(ctl_fan_handle_t hFan, const ctl_fan_speed_
 ctl_result_t ctlFanSetSpeedTableMode(ctl_fan_handle_t hFan, const ctl_fan_speed_table_t *speedTable)
 ```
 
-### Parameters
+**Body parameters**
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
@@ -134,8 +134,38 @@ ctl_result_t ctlFanSetSpeedTableMode(ctl_fan_handle_t hFan, const ctl_fan_speed_
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;speed | The speed of the fan. On output, a value of -1 indicates that there is no fixed fan speed setting | int |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;units | The units that the fan speed is expressed in. On output, if fan speed is -1 then units should be ignored | string ([ctl_fan_speed_units_t](../../enums.md#ctl_fan_speed_units_t)) |
 
-### Fields
+**Fields**
 
 Returns the same output as [`GET /device/{i}/fan/{index}/config`](#get-fan-config).
 
 ## ctlFanGetState
+
+## Get fan state
+
+Get current state of a fan - current mode and speed.
+
+> [!WARNING]
+> Not yet implemented
+
+**Path**
+
+`GET /device/{i}/fan/{index}/state`
+
+**IGCL equivalent**
+
+```cpp
+ctl_result_t ctlFanGetState(ctl_fan_handle_t hFan, ctl_fan_speed_units_t units, int32_t *pSpeed)
+```
+
+**Query parameters**
+
+| Name | Description | Type |
+| ---- | ----------- | ---- |
+| units | The units in which the fan speed should be returned, default is [CTL_FAN_SPEED_UNITS_RPM](../../enums.md#ctl-fan-speed-units-rpm) | string ([ctl_fan_speed_units_t](../../enums.md#ctl_fan_speed_units_t)) |
+
+**Fields**
+
+| Name | Description | Type |
+| ---- | ----------- | ---- |
+| units | The units in which the fan speed should be returned, from request query | string ([ctl_fan_speed_units_t](../../enums.md#ctl_fan_speed_units_t)) |
+| speed | Will contain the current speed of the fan in the units requested. A value of -1 indicates that the fan speed cannot be measured | int |

@@ -2,7 +2,6 @@
 
 * [Devices 🢱](../device.md)
   * _Temperature sensors_
-  * [Temperature sensors 🢱](../temp/temperature.md)
   * [Frequence domains 🢱](../freq/frequence.md)
   * [LEDs 🢱](../led/led.md)
   * [Power domains 🢱](../power/power.md)
@@ -18,17 +17,17 @@ Returns a list of all available temperature sensors
 > [!WARNING]
 > Not yet implemented
 
-### Path
+**Path**
 
 `GET /device/{i}/temp`
 
-### IGCL equivalent
+**IGCL equivalent**
 
 ```cpp
 ctl_result_t ctlEnumTemperatureSensors(ctl_device_adapter_handle_t hDAhandle, uint32_t *pCount, ctl_temp_handle_t *phTemperature)
 ```
 
-### Fields
+**Fields**
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
@@ -43,17 +42,17 @@ Returns a specific sensor properties. Indexes start at 0.
 > [!WARNING]
 > Not yet implemented
 
-### Path
+**Path**
 
 `GET /device/{i}/temp/{index}`
 
-### IGCL equivalent
+**IGCL equivalent**
 
 ```cpp
 ctl_result_t ctlTemperatureGetProperties(ctl_temp_handle_t hTemperature, ctl_temp_properties_t *pProperties)
 ```
 
-### Fields
+**Fields**
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
@@ -67,17 +66,17 @@ Returns a specific sensor temperature in degrees Celcius. Indexes start at 0.
 > [!WARNING]
 > Not yet implemented
 
-### Path
+**Path**
 
 `GET /device/{i}/temp/{index}/state`
 
-### IGCL equivalent
+**IGCL equivalent**
 
 ```cpp
 ctl_result_t ctlTemperatureGetState(ctl_temp_handle_t hTemperature, double *pTemperature)
 ```
 
-### Fields
+**Fields**
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
