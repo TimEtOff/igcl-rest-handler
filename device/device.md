@@ -2,7 +2,7 @@
 
 * _Devices_
   * [Temperature sensors 🢱](./temp/temperature.md)
-  * [Frequence domains 🢱](./freq/frequence.md)
+  * [Frequency domains 🢱](./freq/frequency.md)
   * [LEDs 🢱](./led/led.md)
   * [Power domains 🢱](./power/power.md)
   * [Fans 🢱](./fan/fan.md)

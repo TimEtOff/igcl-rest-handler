@@ -2,7 +2,7 @@
 
 * [Devices 🢱](../device.md)
   * [Temperature sensors 🢱](../temp/temperature.md)
-  * [Frequence domains 🢱](../freq/frequence.md)
+  * [Frequency domains 🢱](../freq/frequency.md)
   * [LEDs 🢱](../led/led.md)
   * [Power domains 🢱](../power/power.md)
   * _Fans_
@@ -108,13 +108,13 @@ With `mode` parameter set to `"CTL_FAN_SPEED_MODE_TABLE"`, configure the fan to 
 
 **Path**
 
-`PATCH /device/{i}/fan/{index}/config`
+`PUT /device/{i}/fan/{index}/config`
 
 **IGCL equivalent**
 
 ```cpp
-ctl_result_t ctlFanSetDefaultMode(ctl_fan_handle_t hFan)
-ctl_result_t ctlFanSetFixedSpeedMode(ctl_fan_handle_t hFan, const ctl_fan_speed_t *speed)
+ctl_result_t ctlFanSetDefaultMode(ctl_fan_handle_t hFan);
+ctl_result_t ctlFanSetFixedSpeedMode(ctl_fan_handle_t hFan, const ctl_fan_speed_t *speed);
 ctl_result_t ctlFanSetSpeedTableMode(ctl_fan_handle_t hFan, const ctl_fan_speed_table_t *speedTable)
 ```
 

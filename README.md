@@ -34,7 +34,7 @@ For the details of every methods, see related handle page:
 
 * [Devices 🢱](./device/device.md)
   * [Temperature sensors 🢱](./device/temp/temperature.md)
-  * [Frequence domains 🢱](./device/freq/frequence.md)
+  * [Frequency domains 🢱](./device/freq/frequency.md)
   * [LEDs 🢱](./device/led/led.md)
   * [Power domains 🢱](./device/power/power.md)
   * [Fans 🢱](./device/fan/fan.md)
