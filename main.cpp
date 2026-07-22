@@ -2,8 +2,7 @@
 #include <iostream>
 #include <string>
 #include <QCoreApplication>
-#include "http_server_async.cpp"
-#include "igcl/cApiWrapper.cpp"
+#include "http_server.hpp"
 
 std::string getReadableVersion(uint64_t integer)
 {
@@ -138,9 +137,8 @@ int main(int argc, char *argv[])
     // If you do not need a running Qt event loop, remove the call
     // to app.exec() or use the Non-Qt Plain C++ Application template.
 
-    init();
-    http_main(argc, argv);
+    //init();
 
     //return app.exec();
-    return 0;
+    return http_run();
 }

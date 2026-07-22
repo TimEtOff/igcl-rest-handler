@@ -14,9 +14,6 @@
 
 Returns a list of all available devices
 
-> [!WARNING]
-> Not yet implemented
-
 **Path**
 
 `GET /device`
@@ -39,9 +36,6 @@ ctl_result_t ctlEnumerateDevices(ctl_api_handle_t hAPIHandle, uint32_t *pCount, 
 
 Returns a specific device properties. Indexes start at 0.
 
-> [!WARNING]
-> Not yet implemented
-
 **Path**
 
 `GET /device/{index}`
@@ -49,7 +43,7 @@ Returns a specific device properties. Indexes start at 0.
 **IGCL equivalent**
 
 ```cpp
-ctl_result_t ctlGetDeviceProperties(ctl_device_adapter_handle_t hDAhandle, ctl_device_adapter_properties_t *pProperties)
+ctl_result_t ctlGetDeviceProperties(ctl_device_adapter_handle_t hDAhandle, ctl_device_adapter_properties_t *pProperties);
 ctl_result_t ctlDevPropGetProperties(ctl_device_adapter_handle_t hDAhandle, ctl_dev_prop_properties_t *pProperties)
 ```
 
@@ -58,7 +52,7 @@ ctl_result_t ctlDevPropGetProperties(ctl_device_adapter_handle_t hDAhandle, ctl_
 | Name | Description | Type |
 | ---- | ----------- | ---- |
 | device_type | Device Type (Graphics, System) | string ([ctl_device_type_t](../enums.md#ctl_device_type_t)) |
-| supported_functions_flags | Supported functions as a byte | int ([ctl_supported_functions_flags_t](../enums.md#ctl_supported_functions_flags_t)) |
+| supported_subfunction_flags | Supported functions as a byte | int ([ctl_supported_functions_flag_t](../enums.md#ctl_supported_functions_flag_t)) |
 | driver_version | Driver version | int |
 | driver_version_str | Readable driver version (w.x.y.z) | string |
 | pci_vendor_id | PCI Vendor ID | int |
@@ -68,7 +62,7 @@ ctl_result_t ctlDevPropGetProperties(ctl_device_adapter_handle_t hDAhandle, ctl_
 | num_sub_slices_per_slice | Number of sub-slices per slice | int |
 | num_slices | Number of slices | int |
 | name | Device name | string |
-| graphics_adapter_properties | Graphics Adapter Properties | int ([ctl_adapter_properties_flags_t](../enums.md#ctl_adapter_properties_flags_t)) |
+| graphics_adapter_properties | Graphics Adapter Properties | int ([ctl_adapter_properties_flag_t](../enums.md#ctl_adapter_properties_flag_t)) |
 | frequency | This represents the average frequency an end user may see in the typical gaming workload. Also referred as Graphics Clock. Supported only for Version > 0 | int |
 | pci_subsys_id | PCI SubSys ID, Supported only for Version > 1 | int |
 | pci_subsys_vendor_id | PCI SubSys Vendor ID, Supported only for Version > 1 | int |

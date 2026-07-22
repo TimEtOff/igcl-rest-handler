@@ -24,6 +24,9 @@ qt_standard_project_setup()
 
 qt_add_executable(igcl-rest-handler
     main.cpp
+    igcl/igcl_api.h igcl/cApiWrapper.cpp
+    http_server.hpp http_server.cpp
+    device/device.hpp device/device_handle.cpp
 )
 
 target_link_libraries(igcl-rest-handler

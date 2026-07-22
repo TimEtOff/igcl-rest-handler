@@ -7,33 +7,10 @@
 // Official repository: https://github.com/boostorg/beast
 //
 
-//------------------------------------------------------------------------------
-//
-// Example: HTTP server, asynchronous
-//
-//------------------------------------------------------------------------------
+#include "http_server.hpp"
+#include "device/device.hpp"
 
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/dispatch.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/config.hpp>
-#include <algorithm>
-#include <cstdlib>
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include "json_body.hpp"
-
-namespace beast = boost::beast;         // from <boost/beast.hpp>
-namespace http = beast::http;           // from <boost/beast/http.hpp>
-namespace net = boost::asio;            // from <boost/asio.hpp>
-using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
+ctl_api_handle_t hAPIHandle;
 
 // Return a reasonable mime type based on the extension of a file.
 beast::string_view
@@ -98,6 +75,78 @@ path_cat(
     return result;
 }
 
+http::response<http::string_body>
+bad_request(
+    beast::string_view why,
+    http::request<http::string_body> const& req)
+{
+    http::response<http::string_body> res{http::status::bad_request, req.version()};
+    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+    res.set(http::field::content_type, "text/html");
+    res.keep_alive(req.keep_alive());
+    res.body() = std::string(why);
+    res.prepare_payload();
+    return res;
+}
+
+http::response<http::string_body>
+not_found(
+    beast::string_view target,
+    http::request<http::string_body> const& req)
+{
+    http::response<http::string_body> res{http::status::not_found, req.version()};
+    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+    res.set(http::field::content_type, "text/html");
+    res.keep_alive(req.keep_alive());
+    res.body() = "The resource '" + std::string(target) + "' was not found.";
+    res.prepare_payload();
+    return res;
+};
+
+http::response<http::string_body>
+server_error(
+    beast::string_view what,
+    http::request<http::string_body> const& req)
+{
+    http::response<http::string_body> res{http::status::internal_server_error, req.version()};
+    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+    res.set(http::field::content_type, "text/html");
+    res.keep_alive(req.keep_alive());
+    res.body() = "An error occurred: '" + std::string(what) + "'";
+    res.prepare_payload();
+    return res;
+};
+
+http::message_generator
+get_response(
+    http::request<http::string_body> const& req,
+    json_body::value_type body)
+{
+    // Respond to HEAD request
+    if (req.method() == http::verb::head)
+    {
+        http::response<http::empty_body> res{http::status::ok, req.version()};
+        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+        res.set(http::field::content_type, mime_type(".json"));
+        res.content_length(json_body::size(body));
+        res.keep_alive(req.keep_alive());
+        return res;
+    } else if (req.method() == http::verb::get) {
+        // Respond to GET request
+        http::response<json_body> res{
+            std::piecewise_construct,
+            std::make_tuple(body),
+            std::make_tuple(http::status::ok, req.version())};
+        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+        res.set(http::field::content_type, mime_type(".json"));
+        res.prepare_payload();
+        res.keep_alive(req.keep_alive());
+        return res;
+    } else {
+        return server_error("Server is mishandling this method on this endpoint", req);
+    }
+}
+
 // Return a response for the given request.
 //
 // The concrete type of the response message (which depends on the
@@ -106,103 +155,35 @@ template <class Body, class Allocator>
 http::message_generator
 handle_request(
     beast::string_view doc_root,
-    http::request<Body, http::basic_fields<Allocator>>&& req)
+    http::request<Body, http::basic_fields<Allocator>> req)
 {
-    // Returns a bad request response
-    auto const bad_request =
-    [&req](beast::string_view why)
-    {
-        http::response<http::string_body> res{http::status::bad_request, req.version()};
-        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(http::field::content_type, "text/html");
-        res.keep_alive(req.keep_alive());
-        res.body() = std::string(why);
-        res.prepare_payload();
-        return res;
-    };
-
-    // Returns a not found response
-    auto const not_found =
-    [&req](beast::string_view target)
-    {
-        http::response<http::string_body> res{http::status::not_found, req.version()};
-        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(http::field::content_type, "text/html");
-        res.keep_alive(req.keep_alive());
-        res.body() = "The resource '" + std::string(target) + "' was not found.";
-        res.prepare_payload();
-        return res;
-    };
-
-    // Returns a server error response
-    auto const server_error =
-    [&req](beast::string_view what)
-    {
-        http::response<http::string_body> res{http::status::internal_server_error, req.version()};
-        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(http::field::content_type, "text/html");
-        res.keep_alive(req.keep_alive());
-        res.body() = "An error occurred: '" + std::string(what) + "'";
-        res.prepare_payload();
-        return res;
-    };
-
-    // Make sure we can handle the method
-    if( req.method() != http::verb::get &&
-        req.method() != http::verb::head)
-        return bad_request("Unknown HTTP-method");
-
     // Request path must be absolute and not contain "..".
     if( req.target().empty() ||
         req.target()[0] != '/' ||
         req.target().find("..") != beast::string_view::npos)
-        return bad_request("Illegal request-target");
+        return bad_request("Illegal request-target", req);
 
-    //// Build the path to the requested file
-    //std::string path = path_cat(doc_root, req.target());
-    //if(req.target().back() == '/')
-    //    path.append("index.html");
+    std::string target = req.target();
+    if(target.back() != '/')
+        target += '/';
 
-    //// Attempt to open the file
-    //beast::error_code ec;
-    //http::file_body::value_type body;
-    //body.open(path.c_str(), beast::file_mode::scan, ec);
+    if (target.rfind("/device/", 0) == 0)
+    {
+        target = target.substr(std::string("/device/").length());
+        return handle_device(doc_root, std::move(req), target, hAPIHandle);
+    } else {
+        return not_found(req.target(), req);
+    }
 
-    //// Handle the case where the file doesn't exist
-    //if(ec == beast::errc::no_such_file_or_directory)
-    //    return not_found(path.c_str());
-
-    //// Handle an unknown error
-    //if(ec)
-    //    return server_error(ec.message());
+    // Make sure we can handle the method
+    if( req.method() != http::verb::get &&
+        req.method() != http::verb::head)
+        return bad_request("Unknown HTTP-method", req);
 
     json_body::value_type body;
     body = {{"type", "test"}, {"content", "pure awesomeness"}};
 
-    //// Cache the size since we need it after the move
-    //auto const size = body.size();
-
-    // Respond to HEAD request
-    if(req.method() == http::verb::head)
-    {
-        http::response<http::empty_body> res{http::status::ok, req.version()};
-        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(http::field::content_type, mime_type(".json"));
-        res.content_length(json_body::size(body));
-        res.keep_alive(req.keep_alive());
-        return res;
-    }
-
-    // Respond to GET request
-    http::response<json_body> res{
-        std::piecewise_construct,
-        std::make_tuple(body),
-        std::make_tuple(http::status::ok, req.version())};
-    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-    res.set(http::field::content_type, mime_type(".json"));
-    res.prepare_payload();
-    res.keep_alive(req.keep_alive());
-    return res;
+    return get_response(req, body);
 }
 
 //------------------------------------------------------------------------------
@@ -443,7 +424,7 @@ private:
 
 //------------------------------------------------------------------------------
 
-int http_main(int argc, char* argv[])
+int http_run(void)
 {
     // Check command line arguments.
     //if (argc != 5)
@@ -459,30 +440,45 @@ int http_main(int argc, char* argv[])
     //auto const doc_root = std::make_shared<std::string>(argv[3]);
     //auto const threads = std::max<int>(1, std::atoi(argv[4]));
 
-    auto const address = net::ip::make_address("0.0.0.0");
-    auto const port = static_cast<unsigned short>(9738);
-    auto const doc_root = std::make_shared<std::string>(".");
-    auto const threads = std::max<int>(1, 1);
+    ctl_init_args_t CtlInitArgs;
 
-    // The io_context is required for all I/O
-    net::io_context ioc{threads};
+    CtlInitArgs.AppVersion = CTL_MAKE_VERSION(CTL_IMPL_MAJOR_VERSION, CTL_IMPL_MINOR_VERSION);
+    CtlInitArgs.flags = CTL_INIT_FLAG_USE_LEVEL_ZERO;
+    CtlInitArgs.Size = sizeof(CtlInitArgs);
+    CtlInitArgs.Version = 0;
+    ZeroMemory(&CtlInitArgs.ApplicationUID, sizeof(ctl_application_id_t));
 
-    // Create and launch a listening port
-    std::make_shared<listener>(
-        ioc,
-        tcp::endpoint{address, port},
-        doc_root)->run();
+    ctl_result_t res = ctlInit(&CtlInitArgs, &hAPIHandle);
+    if (res != CTL_RESULT_SUCCESS) {
+        std::cout << "Can't initialize the API: " << magic_enum::enum_name(res) << std::endl;
+        return EXIT_FAILURE;
+    } else {
 
-    // Run the I/O service on the requested number of threads
-    std::vector<std::thread> v;
-    v.reserve(threads - 1);
-    for(auto i = threads - 1; i > 0; --i)
-        v.emplace_back(
-        [&ioc]
-        {
-            ioc.run();
-        });
-    ioc.run();
+        auto const address = net::ip::make_address("0.0.0.0");
+        auto const port = static_cast<unsigned short>(9738);
+        auto const doc_root = std::make_shared<std::string>(".");
+        auto const threads = std::max<int>(1, 1);
 
-    return EXIT_SUCCESS;
+        // The io_context is required for all I/O
+        net::io_context ioc{threads};
+
+        // Create and launch a listening port
+        std::make_shared<listener>(
+            ioc,
+            tcp::endpoint{address, port},
+            doc_root)->run();
+
+        // Run the I/O service on the requested number of threads
+        std::vector<std::thread> v;
+        v.reserve(threads - 1);
+        for(auto i = threads - 1; i > 0; --i)
+            v.emplace_back(
+            [&ioc]
+            {
+                ioc.run();
+            });
+        ioc.run();
+
+        return EXIT_SUCCESS;
+    }
 }
