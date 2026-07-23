@@ -14,9 +14,6 @@
 
 Returns a list of all available temperature sensors
 
-> [!WARNING]
-> Not yet implemented
-
 **Path**
 
 `GET /device/{i}/temp`
@@ -39,9 +36,6 @@ ctl_result_t ctlEnumTemperatureSensors(ctl_device_adapter_handle_t hDAhandle, ui
 
 Returns a specific sensor properties. Indexes start at 0.
 
-> [!WARNING]
-> Not yet implemented
-
 **Path**
 
 `GET /device/{i}/temp/{index}`
@@ -57,14 +51,11 @@ ctl_result_t ctlTemperatureGetProperties(ctl_temp_handle_t hTemperature, ctl_tem
 | Name | Description | Type |
 | ---- | ----------- | ---- |
 | type | Which part of the device the temperature sensor measures | string ([ctl_temp_sensors_t](../../enums.md#ctl_temp_sensors_t)) |
-| maxTemperature | Will contain the maximum temperature for the specific device in degrees Celsius | float |
+| max_temperature | Will contain the maximum temperature for the specific device in degrees Celsius | float |
 
 ## Get sensor temperature
 
 Returns a specific sensor temperature in degrees Celcius. Indexes start at 0.
-
-> [!WARNING]
-> Not yet implemented
 
 **Path**
 

@@ -5,7 +5,6 @@
 
 http::message_generator
 handle_device(
-    beast::string_view doc_root,
     http::request<http::string_body>&& req,
     std::string& target,
     ctl_api_handle_t& hAPIHandle);

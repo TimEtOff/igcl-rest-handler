@@ -75,44 +75,44 @@ path_cat(
     return result;
 }
 
-http::response<http::string_body>
+http::response<json_body>
 bad_request(
     beast::string_view why,
     http::request<http::string_body> const& req)
 {
-    http::response<http::string_body> res{http::status::bad_request, req.version()};
+    http::response<json_body> res{http::status::bad_request, req.version()};
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-    res.set(http::field::content_type, "text/html");
+    res.set(http::field::content_type, mime_type(".json"));
     res.keep_alive(req.keep_alive());
-    res.body() = std::string(why);
+    res.body() = {{"message", "400: Bad request"}, {"details", std::string(why)}};
     res.prepare_payload();
     return res;
 }
 
-http::response<http::string_body>
+http::response<json_body>
 not_found(
     beast::string_view target,
     http::request<http::string_body> const& req)
 {
-    http::response<http::string_body> res{http::status::not_found, req.version()};
+    http::response<json_body> res{http::status::not_found, req.version()};
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-    res.set(http::field::content_type, "text/html");
+    res.set(http::field::content_type, mime_type(".json"));
     res.keep_alive(req.keep_alive());
-    res.body() = "The resource '" + std::string(target) + "' was not found.";
+    res.body() = {{"message", "404: Not found"}, {"details", "The resource '" + std::string(target) + "' was not found."}};
     res.prepare_payload();
     return res;
 };
 
-http::response<http::string_body>
+http::response<json_body>
 server_error(
     beast::string_view what,
     http::request<http::string_body> const& req)
 {
-    http::response<http::string_body> res{http::status::internal_server_error, req.version()};
+    http::response<json_body> res{http::status::internal_server_error, req.version()};
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-    res.set(http::field::content_type, "text/html");
+    res.set(http::field::content_type, mime_type(".json"));
     res.keep_alive(req.keep_alive());
-    res.body() = "An error occurred: '" + std::string(what) + "'";
+    res.body() = {{"message", "500: Server error"}, {"details", "An error occurred: '" + std::string(what) + "'"}};
     res.prepare_payload();
     return res;
 };
@@ -170,7 +170,7 @@ handle_request(
     if (target.rfind("/device/", 0) == 0)
     {
         target = target.substr(std::string("/device/").length());
-        return handle_device(doc_root, std::move(req), target, hAPIHandle);
+        return handle_device(std::move(req), target, hAPIHandle);
     } else {
         return not_found(req.target(), req);
     }

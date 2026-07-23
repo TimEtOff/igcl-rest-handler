@@ -35,19 +35,19 @@ void fail(beast::error_code ec, char const* what);
 int http_run(void);
 
 // Returns a bad request response
-http::response<http::string_body>
+http::response<json_body>
 bad_request(
     beast::string_view why,
     http::request<http::string_body> const& req);
 
 // Returns a not found response
-http::response<http::string_body>
+http::response<json_body>
 not_found(
     beast::string_view target,
     http::request<http::string_body> const& req);
 
 // Returns a server error response
-http::response<http::string_body>
+http::response<json_body>
 server_error(
     beast::string_view what,
     http::request<http::string_body> const& req);
