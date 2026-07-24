@@ -1,6 +1,7 @@
 
 #include "device.hpp"
 #include "temp/temp.hpp"
+#include "fan/fan.hpp"
 
 json::object get_device_properties(ctl_device_adapter_handle_t &hDevice, ctl_result_t& ctlResult)
 {
@@ -93,6 +94,11 @@ handle_device(
             {
                 target = target.substr(std::string("temp/").length());
                 return handle_temp(std::move(req), target, hDevice);
+            }
+            else if (target.rfind("fan/", 0) == 0)                  // /device/{index}/fan
+            {
+                target = target.substr(std::string("fan/").length());
+                return handle_fan(std::move(req), target, hDevice);
             } else {
                 return not_found(req.target(), req);
             }

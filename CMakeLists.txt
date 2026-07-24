@@ -28,6 +28,7 @@ qt_add_executable(igcl-rest-handler
     http_server.hpp http_server.cpp
     device/device.hpp device/device_handle.cpp
     device/temp/temp.hpp device/temp/temp_handle.cpp
+    device/fan/fan.hpp device/fan/fan_handle.cpp
 )
 
 target_link_libraries(igcl-rest-handler

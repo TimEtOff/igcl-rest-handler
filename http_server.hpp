@@ -17,6 +17,7 @@
 #include <charconv>
 #include <thread>
 #include <vector>
+#include <map>
 
 #include "json_body.hpp"
 #include "igcl/igcl_api.h"

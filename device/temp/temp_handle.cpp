@@ -1,7 +1,6 @@
-
 #include "temp.hpp"
 
-json::object get_temp_properties(ctl_temp_handle_t& hDevice, ctl_result_t& ctlResult)
+json::object get_temp_properties(ctl_temp_handle_t& hSensor, ctl_result_t& ctlResult)
 {
     json::object res = {};
 
@@ -10,7 +9,7 @@ json::object get_temp_properties(ctl_temp_handle_t& hDevice, ctl_result_t& ctlRe
 
     pSensor.Size           = sizeof(ctl_temp_properties_t);
     pSensor.Version        = 0;
-    ctlResult = ctlTemperatureGetProperties(hDevice, &pSensor);
+    ctlResult = ctlTemperatureGetProperties(hSensor, &pSensor);
 
     if (ctlResult != CTL_RESULT_SUCCESS)
         return res;
@@ -53,7 +52,7 @@ handle_temp(
 
     if (ctlResult != CTL_RESULT_SUCCESS) {
         free(hTemps);
-        return server_error("ctlEnumerateDevices: " + std::string(magic_enum::enum_name(ctlResult)), req);
+        return server_error("ctlEnumTemperatureSensors: " + std::string(magic_enum::enum_name(ctlResult)), req);
     }
 
     json_body::value_type body;
@@ -65,10 +64,10 @@ handle_temp(
 
         if (tempInd >= sensorCount) {
             free(hTemps);
-            return bad_request("Device index out of bounds (" + std::to_string(tempInd) + " out of " + std::to_string(sensorCount) + ")", req);
+            return bad_request("Temp sensor index out of bounds (" + std::to_string(tempInd) + " out of " + std::to_string(sensorCount) + ")", req);
         }
 
-        ctl_temp_handle_t hDevice = hTemps[tempInd];
+        ctl_temp_handle_t hTemp = hTemps[tempInd];
         free(hTemps);
 
         if (!target.empty()) {                                      // /device/{i}/temp/{index}/state
@@ -78,7 +77,7 @@ handle_temp(
                     req.method() != http::verb::head)
                     return bad_request("Unknown HTTP-method", req);
 
-                body = get_temp_state(hDevice, ctlResult);
+                body = get_temp_state(hTemp, ctlResult);
                 if (ctlResult == CTL_RESULT_SUCCESS)
                     return get_response(req, body);
                 else
@@ -91,7 +90,7 @@ handle_temp(
                 req.method() != http::verb::head)
                 return bad_request("Unknown HTTP-method", req);
 
-            body = get_temp_properties(hDevice, ctlResult);
+            body = get_temp_properties(hTemp, ctlResult);
             if (ctlResult == CTL_RESULT_SUCCESS)
                 return get_response(req, body);
             else

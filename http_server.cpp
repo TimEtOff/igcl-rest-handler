@@ -8,6 +8,7 @@
 //
 
 #include "http_server.hpp"
+#include "boost/json/object.hpp"
 #include "device/device.hpp"
 
 ctl_api_handle_t hAPIHandle;
@@ -117,6 +118,45 @@ server_error(
     return res;
 };
 
+std::map<std::string, std::string>
+split_query(const std::string &query)
+{
+    std::map<std::string, std::string> results;
+
+    // Split into key value pairs separated by '&'.
+    size_t prev_amp_index = 0;
+    while(prev_amp_index != std::string::npos)
+    {
+        size_t amp_index = query.find_first_of('&', prev_amp_index);
+        if (amp_index == std::string::npos)
+            amp_index = query.find_first_of(';', prev_amp_index);
+
+        std::string key_value_pair = query.substr(
+            prev_amp_index,
+            amp_index == std::string::npos ? query.size() - prev_amp_index : amp_index - prev_amp_index);
+        prev_amp_index = amp_index == std::string::npos ? std::string::npos : amp_index + 1;
+
+        size_t equals_index = key_value_pair.find_first_of('=');
+        if(equals_index == std::string::npos)
+        {
+            continue;
+        }
+        else if (equals_index == 0)
+        {
+            std::string value(key_value_pair.begin() + equals_index + 1, key_value_pair.end());
+            results[""] = value;
+        }
+        else
+        {
+            std::string key(key_value_pair.begin(), key_value_pair.begin() + equals_index);
+            std::string value(key_value_pair.begin() + equals_index + 1, key_value_pair.end());
+            results[key] = value;
+        }
+    }
+
+    return results;
+}
+
 http::message_generator
 get_response(
     http::request<http::string_body> const& req,
@@ -174,16 +214,6 @@ handle_request(
     } else {
         return not_found(req.target(), req);
     }
-
-    // Make sure we can handle the method
-    if( req.method() != http::verb::get &&
-        req.method() != http::verb::head)
-        return bad_request("Unknown HTTP-method", req);
-
-    json_body::value_type body;
-    body = {{"type", "test"}, {"content", "pure awesomeness"}};
-
-    return get_response(req, body);
 }
 
 //------------------------------------------------------------------------------

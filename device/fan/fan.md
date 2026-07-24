@@ -14,9 +14,6 @@
 
 Returns a list of all available fans
 
-> [!WARNING]
-> Not yet implemented
-
 **Path**
 
 `GET /device/{i}/fan`
@@ -39,9 +36,6 @@ ctl_result_t ctlEnumFans(ctl_device_adapter_handle_t hDAhandle, uint32_t *pCount
 
 Returns a specific fan properties.
 
-> [!WARNING]
-> Not yet implemented
-
 **Path**
 
 `GET /device/{i}/fan/{index}`
@@ -58,7 +52,7 @@ ctl_result_t ctlFanGetProperties(ctl_fan_handle_t hFan, ctl_fan_properties_t *pP
 | ---- | ----------- | ---- |
 | can_control | Indicates if software can control the fan speed assuming the user has permissions | bool |
 | supported_modes | Bitfield of supported fan configuration modes (1<<[ctl_fan_speed_mode_t](../../enums.md#ctl_fan_speed_mode_t)) | int |
-| supportedUnits | Bitfield of supported fan speed units (1<<[ctl_fan_speed_units_t](../../enums.md#ctl_fan_speed_units_t)) | int |
+| supported_units | Bitfield of supported fan speed units (1<<[ctl_fan_speed_units_t](../../enums.md#ctl_fan_speed_units_t)) | int |
 | max_rpm | The maximum RPM of the fan. A value of -1 means that this property is unknown | int |
 | max_points | The maximum number of points in the fan temp/speed table. A value of -1 means that this fan doesn't support providing a temp/speed table | int |
 
@@ -141,9 +135,6 @@ Returns the same output as [`GET /device/{i}/fan/{index}/config`](#get-fan-confi
 ## Get fan state
 
 Get current state of a fan - current mode and speed.
-
-> [!WARNING]
-> Not yet implemented
 
 **Path**
 
