@@ -8,8 +8,11 @@
 //
 
 #include "http_server.hpp"
-#include "boost/json/object.hpp"
+#include "boost/json/value.hpp"
 #include "device/device.hpp"
+#include <any>
+#include <string>
+#include <vector>
 
 ctl_api_handle_t hAPIHandle;
 
@@ -118,10 +121,85 @@ server_error(
     return res;
 };
 
-std::map<std::string, std::string>
-split_query(const std::string &query)
+std::string
+str_extract(
+    std::string *origin,
+    const char sep)
 {
-    std::map<std::string, std::string> results;
+    std::string res;
+
+    size_t pos = origin->find_first_of(sep);
+
+    if (pos != std::string::npos)
+    {
+        res = origin->substr(0, pos);
+        *origin = origin->substr(pos + 1);
+    } else
+    {
+        res = origin->substr();
+        *origin = "";
+    }
+
+    return res;
+}
+
+bool
+str_starts_with_erase(
+    std::string *origin,
+    const std::string &search)
+{
+    if (origin->rfind(search, 0) == 0)
+    {
+        *origin = origin->substr(search.length());
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool
+add_value(
+    json::object &obj,
+    const query_type &query,
+    const std::string &key,
+    const json::value &value)
+{
+    auto fieldsIt = query.find("fields");
+    if (fieldsIt != query.end()) {
+        std::vector<std::string> fields = std::any_cast<std::vector<std::string>>(fieldsIt->second);
+
+        if (std::find(fields.begin(), fields.end(), key) != fields.end())
+        {
+            obj[key] = value;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    else {
+        obj[key] = value;
+        return true;
+    }
+}
+
+std::vector<std::string>
+split_fields(
+    std::string &fields)
+{
+    std::vector<std::string> res;
+
+    while (!fields.empty())
+        res.push_back(str_extract(&fields, ','));
+
+    return res;
+}
+
+query_type
+split_query(
+    const std::string &query)
+{
+    query_type results;
 
     // Split into key value pairs separated by '&'.
     size_t prev_amp_index = 0;
@@ -150,7 +228,10 @@ split_query(const std::string &query)
         {
             std::string key(key_value_pair.begin(), key_value_pair.begin() + equals_index);
             std::string value(key_value_pair.begin() + equals_index + 1, key_value_pair.end());
-            results[key] = value;
+            if (key == "fields")
+                results[key] = split_fields(value);
+            else
+                results[key] = value;
         }
     }
 
@@ -158,7 +239,7 @@ split_query(const std::string &query)
 }
 
 http::message_generator
-get_response(
+create_response(
     http::request<http::string_body> const& req,
     json_body::value_type body)
 {
@@ -171,8 +252,7 @@ get_response(
         res.content_length(json_body::size(body));
         res.keep_alive(req.keep_alive());
         return res;
-    } else if (req.method() == http::verb::get) {
-        // Respond to GET request
+    } else {
         http::response<json_body> res{
             std::piecewise_construct,
             std::make_tuple(body),
@@ -182,8 +262,6 @@ get_response(
         res.prepare_payload();
         res.keep_alive(req.keep_alive());
         return res;
-    } else {
-        return server_error("Server is mishandling this method on this endpoint", req);
     }
 }
 
@@ -203,15 +281,18 @@ handle_request(
         req.target().find("..") != beast::string_view::npos)
         return bad_request("Illegal request-target", req);
 
-    std::string target = req.target();
+    std::string temp = req.target();
+    std::string target = str_extract(&temp, '?');
+    std::map<std::string, std::any> query = split_query(temp);
+
     if(target.back() != '/')
         target += '/';
 
-    if (target.rfind("/device/", 0) == 0)
+    if (str_starts_with_erase(&target, "/device/"))
     {
-        target = target.substr(std::string("/device/").length());
-        return handle_device(std::move(req), target, hAPIHandle);
-    } else {
+        return handle_device(std::move(req), target, query, hAPIHandle);
+    } else
+    {
         return not_found(req.target(), req);
     }
 }

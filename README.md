@@ -29,6 +29,7 @@ The API works by layers, for exemple:
 
 > [!NOTE]
 > For every GET request, all fields are returned by default, but you can retrieve only specific ones with adding `?fields=` to the query with fields names, separated by a comma.
+> Field selection is only available for first level fields. Any nested fields will always be returned if their parent is enabled.
 
 For the details of every methods, see related handle page:
 

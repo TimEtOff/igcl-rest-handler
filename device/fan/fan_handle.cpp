@@ -1,7 +1,10 @@
 #include "fan.hpp"
-#include "magic_enum/magic_enum.hpp"
 
-json::object get_fan_properties(ctl_fan_handle_t& hFan, ctl_result_t& ctlResult)
+json::object
+get_fan_properties(
+    ctl_fan_handle_t &hFan,
+    ctl_result_t &ctlResult,
+    const query_type &query = query_type())
 {
     json::object res = {};
 
@@ -15,28 +18,42 @@ json::object get_fan_properties(ctl_fan_handle_t& hFan, ctl_result_t& ctlResult)
     if (ctlResult != CTL_RESULT_SUCCESS)
         return res;
 
-    res["can_control"] = pFan.canControl;
-    res["supported_modes"] = pFan.supportedModes; // TODO Change int to array of all enabled flags
-    res["supported_units"] = pFan.supportedUnits;
-    res["max_rpm"] = pFan.maxRPM;
-    res["max_points"] = pFan.maxPoints;
+    add_value(res, query, "can_control"     , pFan.canControl);
+    add_value(res, query, "supported_modes" , pFan.supportedModes); // TODO Change int to array of all enabled flags
+    add_value(res, query, "supported_units" , pFan.supportedUnits);
+    add_value(res, query, "max_rpm"         , pFan.maxRPM);
+    add_value(res, query, "max_points"      , pFan.maxPoints);
 
     return res;
 }
 
-json::object get_fan_state(ctl_fan_handle_t& hDevice, ctl_result_t& ctlResult)
+json::object
+get_fan_state(
+    ctl_fan_handle_t &hDevice,
+    ctl_result_t &ctlResult,
+    const query_type &query = query_type())
 {
     json::object res = {};
 
-    ctl_fan_speed_units_t units = CTL_FAN_SPEED_UNITS_RPM;
+    std::string unitStr;
+    auto unitsIt = query.find("units");
+    if (unitsIt != query.end()) {
+        unitStr = std::any_cast<std::string>(query.at("units"));
+    }
+
+    auto units = magic_enum::enum_cast<ctl_fan_speed_units_t>(
+        unitStr,
+        magic_enum::case_insensitive
+    ).value_or(CTL_FAN_SPEED_UNITS_RPM);
+
     int32_t speed;
     ctlResult = ctlFanGetState(hDevice, units, &speed);
 
     if (ctlResult != CTL_RESULT_SUCCESS)
         return res;
 
-    res["units"] = magic_enum::enum_name(units);
-    res["speed"] = speed;
+    add_value(res, query, "units", json::value_from(magic_enum::enum_name(units)));
+    add_value(res, query, "speed", speed);
 
     return res;
 }
@@ -45,6 +62,7 @@ http::message_generator
 handle_fan(
     http::request<http::string_body>&& req,
     std::string& target,
+    const query_type &query,
     ctl_device_adapter_handle_t& hDevice)
 {
     ctl_result_t ctlResult;
@@ -63,30 +81,31 @@ handle_fan(
     json_body::value_type body;
 
     if (!target.empty()) {
-        size_t pos = target.find_first_of('/');
-        size_t tempInd = static_cast<size_t>(std::stoul(target.substr(0, pos)));
-        target = target.substr(pos + 1);
-
-        if (tempInd >= fanCount) {
+        size_t fanInd;
+        try {
+            fanInd = static_cast<size_t>(std::stoul(str_extract(&target, '/')));
+        }
+        catch (std::invalid_argument) {
             free(hFans);
-            return bad_request("Fan index out of bounds (" + std::to_string(tempInd) + " out of " + std::to_string(fanCount) + ")", req);
+            return bad_request("Invalid fan index", req);
         }
 
-        ctl_fan_handle_t hFan = hFans[tempInd];
+        if (fanInd >= fanCount) {
+            free(hFans);
+            return bad_request("Fan index out of bounds (" + std::to_string(fanInd) + " out of " + std::to_string(fanCount) + ")", req);
+        }
+
+        ctl_fan_handle_t hFan = hFans[fanInd];
         free(hFans);
 
         if (!target.empty()) {                                      // /device/{i}/fan/{index}/state
-            if (target.rfind("state/", 0) == 0) { // TODO For all, deny if target is not empty afer reaching endpoint
+            if (str_starts_with_erase(&target, "state/") && target.empty()) {
                 // Make sure we can handle the method
                 if( req.method() != http::verb::get &&
                     req.method() != http::verb::head)
                     return bad_request("Unknown HTTP-method", req);
 
-                body = get_fan_state(hFan, ctlResult);
-                if (ctlResult == CTL_RESULT_SUCCESS)
-                    return get_response(req, body);
-                else
-                    return server_error(magic_enum::enum_name(ctlResult), req);
+                body = get_fan_state(hFan, ctlResult, query);
             } else
                 return not_found(req.target(), req);
         } else {                                                    // /device/{i}/fan/{index}
@@ -95,12 +114,14 @@ handle_fan(
                 req.method() != http::verb::head)
                 return bad_request("Unknown HTTP-method", req);
 
-            body = get_fan_properties(hFan, ctlResult);
-            if (ctlResult == CTL_RESULT_SUCCESS)
-                return get_response(req, body);
-            else
-                return server_error(magic_enum::enum_name(ctlResult), req);
+            body = get_fan_properties(hFan, ctlResult, query);
         }
+
+        if (ctlResult == CTL_RESULT_SUCCESS)
+            return create_response(req, body);
+        else
+            return server_error(enum_name(ctlResult), req);
+
     } else {                                                        // /device/{i}/fan
         // Make sure we can handle the method
         if( req.method() != http::verb::get &&
@@ -109,21 +130,22 @@ handle_fan(
 
         json::object body = {};
 
-        body["count"] = fanCount;
+        add_value(body, query, "count", fanCount);
 
         json::array fans;
         for(int i = 0; i < fanCount; i++) {
             fans.push_back(get_fan_properties(hFans[i], ctlResult));
+
             if (ctlResult != CTL_RESULT_SUCCESS) {
                 free(hFans);
-                return server_error(magic_enum::enum_name(ctlResult), req);
+                return server_error(enum_name(ctlResult), req);
             }
         }
 
-        body["fans"] = fans;
+        add_value(body, query, "fans", fans);
 
         free(hFans);
-        return get_response(req, body);
+        return create_response(req, body);
     }
 }
 

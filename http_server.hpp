@@ -27,6 +27,12 @@ namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
+typedef std::map<std::string, std::any> query_type;
+
+// ctl_result_t values range is too wide for magic_enum, so it's hardcoded
+std::string enum_name(
+    ctl_result_t value) noexcept;
+
 beast::string_view mime_type(beast::string_view path);
 
 std::string path_cat(beast::string_view base, beast::string_view path);
@@ -53,8 +59,25 @@ server_error(
     beast::string_view what,
     http::request<http::string_body> const& req);
 
+    std::string
+str_extract(
+    std::string *origin,
+    const char sep);
+
+bool
+str_starts_with_erase(
+    std::string *origin,
+    const std::string &search);
+
+bool
+add_value(
+    json::object &obj,
+    const query_type &query,
+    const std::string &key,
+    const json::value &value);
+
 http::message_generator
-get_response(
+create_response(
     http::request<http::string_body> const& req,
     json_body::value_type body);
 

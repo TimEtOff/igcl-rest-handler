@@ -1,6 +1,10 @@
 #include "temp.hpp"
 
-json::object get_temp_properties(ctl_temp_handle_t& hSensor, ctl_result_t& ctlResult)
+json::object
+get_temp_properties(
+    ctl_temp_handle_t &hSensor,
+    ctl_result_t &ctlResult,
+    const query_type &query = query_type())
 {
     json::object res = {};
 
@@ -14,13 +18,17 @@ json::object get_temp_properties(ctl_temp_handle_t& hSensor, ctl_result_t& ctlRe
     if (ctlResult != CTL_RESULT_SUCCESS)
         return res;
 
-    res["type"] = magic_enum::enum_name(pSensor.type);
-    res["max_temperature"] = pSensor.maxTemperature;
+    add_value(res, query, "type"               , json::value_from(magic_enum::enum_name(pSensor.type)));
+    add_value(res, query, "max_temperature"    , pSensor.maxTemperature);
 
     return res;
 }
 
-json::object get_temp_state(ctl_temp_handle_t& hDevice, ctl_result_t& ctlResult)
+json::object
+get_temp_state(
+    ctl_temp_handle_t &hDevice,
+    ctl_result_t &ctlResult,
+    const query_type &query = query_type())
 {
     json::object res = {};
 
@@ -31,7 +39,7 @@ json::object get_temp_state(ctl_temp_handle_t& hDevice, ctl_result_t& ctlResult)
     if (ctlResult != CTL_RESULT_SUCCESS)
         return res;
 
-    res["temperature"] = temp;
+    add_value(res, query, "temperature", temp);
 
     return res;
 }
@@ -39,7 +47,8 @@ json::object get_temp_state(ctl_temp_handle_t& hDevice, ctl_result_t& ctlResult)
 http::message_generator
 handle_temp(
     http::request<http::string_body>&& req,
-    std::string& target,
+    std::string &target,
+    const query_type &query,
     ctl_device_adapter_handle_t& hDevice)
 {
     ctl_result_t ctlResult;
@@ -58,9 +67,14 @@ handle_temp(
     json_body::value_type body;
 
     if (!target.empty()) {
-        size_t pos = target.find_first_of('/');
-        size_t tempInd = static_cast<size_t>(std::stoul(target.substr(0, pos)));
-        target = target.substr(pos + 1);
+        size_t tempInd;
+        try {
+            tempInd = static_cast<size_t>(std::stoul(str_extract(&target, '/')));
+        }
+        catch (std::invalid_argument) {
+            free(hTemps);
+            return bad_request("Invalid temp sensor index", req);
+        }
 
         if (tempInd >= sensorCount) {
             free(hTemps);
@@ -71,31 +85,27 @@ handle_temp(
         free(hTemps);
 
         if (!target.empty()) {                                      // /device/{i}/temp/{index}/state
-            if (target.rfind("state/", 0) == 0) {
-                // Make sure we can handle the method
+            if (str_starts_with_erase(&target, "state/") && target.empty()) {
                 if( req.method() != http::verb::get &&
                     req.method() != http::verb::head)
                     return bad_request("Unknown HTTP-method", req);
 
-                body = get_temp_state(hTemp, ctlResult);
-                if (ctlResult == CTL_RESULT_SUCCESS)
-                    return get_response(req, body);
-                else
-                    return server_error(magic_enum::enum_name(ctlResult), req);
+                body = get_temp_state(hTemp, ctlResult, query);
             } else
                 return not_found(req.target(), req);
+
         } else {                                                    // /device/{i}/temp/{index}
-            // Make sure we can handle the method
             if( req.method() != http::verb::get &&
                 req.method() != http::verb::head)
                 return bad_request("Unknown HTTP-method", req);
 
-            body = get_temp_properties(hTemp, ctlResult);
-            if (ctlResult == CTL_RESULT_SUCCESS)
-                return get_response(req, body);
-            else
-                return server_error(magic_enum::enum_name(ctlResult), req);
+            body = get_temp_properties(hTemp, ctlResult, query);
         }
+
+        if (ctlResult == CTL_RESULT_SUCCESS)
+            return create_response(req, body);
+        else
+            return server_error(enum_name(ctlResult), req);
     } else {                                                        // /device/{i}/temp
         // Make sure we can handle the method
         if( req.method() != http::verb::get &&
@@ -104,21 +114,22 @@ handle_temp(
 
         json::object body = {};
 
-        body["count"] = sensorCount;
+        add_value(body, query, "count", sensorCount);
 
         json::array sensors;
         for(int i = 0; i < sensorCount; i++) {
             sensors.push_back(get_temp_properties(hTemps[i], ctlResult));
+
             if (ctlResult != CTL_RESULT_SUCCESS) {
                 free(hTemps);
-                return server_error(magic_enum::enum_name(ctlResult), req);
+                return server_error(enum_name(ctlResult), req);
             }
         }
 
-        body["sensors"] = sensors;
+        add_value(body, query, "sensors", sensors);
 
         free(hTemps);
-        return get_response(req, body);
+        return create_response(req, body);
     }
 }
 

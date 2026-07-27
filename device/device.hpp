@@ -7,6 +7,7 @@ http::message_generator
 handle_device(
     http::request<http::string_body>&& req,
     std::string& target,
+    const query_type &query,
     ctl_api_handle_t& hAPIHandle);
 
 #endif // DEVICE_HPP

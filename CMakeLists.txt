@@ -25,7 +25,7 @@ qt_standard_project_setup()
 qt_add_executable(igcl-rest-handler
     main.cpp
     igcl/igcl_api.h igcl/cApiWrapper.cpp
-    http_server.hpp http_server.cpp
+    http_server.hpp http_server.cpp result_enum_cast.cpp
     device/device.hpp device/device_handle.cpp
     device/temp/temp.hpp device/temp/temp_handle.cpp
     device/fan/fan.hpp device/fan/fan_handle.cpp

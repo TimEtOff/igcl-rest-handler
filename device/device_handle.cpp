@@ -1,9 +1,14 @@
 
+#include "boost/json/object.hpp"
 #include "device.hpp"
 #include "temp/temp.hpp"
 #include "fan/fan.hpp"
 
-json::object get_device_properties(ctl_device_adapter_handle_t &hDevice, ctl_result_t& ctlResult)
+json::object
+get_device_properties(
+    ctl_device_adapter_handle_t &hDevice,
+    ctl_result_t ctlResult,
+    const query_type &query = query_type())
 {
     json::object res = {};
 
@@ -21,34 +26,34 @@ json::object get_device_properties(ctl_device_adapter_handle_t &hDevice, ctl_res
         return res;
     }
 
-    res["device_type"]                 = magic_enum::enum_name(pDevice.device_type);
-    res["supported_subfunction_flags"] = pDevice.supported_subfunction_flags;
-    res["driver_version"]              = pDevice.driver_version;
-    res["driver_version_str"]          = getReadableVersion(pDevice.driver_version);
-    res["pci_vendor_id"]               = pDevice.pci_vendor_id;
-    res["pci_device_id"]               = pDevice.pci_device_id;
-    res["rev_id"]                      = pDevice.rev_id;
-    res["num_eus_per_sub_slice"]       = pDevice.num_eus_per_sub_slice;
-    res["num_sub_slices_per_slice"]    = pDevice.num_sub_slices_per_slice;
-    res["num_slices"]                  = pDevice.num_slices;
-    res["name"]                        = pDevice.name;
-    res["graphics_adapter_properties"] = pDevice.graphics_adapter_properties;
-    res["frequency"]                   = pDevice.Frequency;
-    res["pci_subsys_id"]               = pDevice.pci_subsys_id;
-    res["pci_subsys_vendor_id"]        = pDevice.pci_subsys_vendor_id;
-    res["adapter_bdf"]                 = {
+    add_value(res, query, "device_type"                  , json::value_from(magic_enum::enum_name(pDevice.device_type)));
+    add_value(res, query, "supported_subfunction_flags"  , pDevice.supported_subfunction_flags);
+    add_value(res, query, "driver_version"               , pDevice.driver_version);
+    add_value(res, query, "driver_version_str"           , json::value_from(getReadableVersion(pDevice.driver_version)));
+    add_value(res, query, "pci_vendor_id"                , pDevice.pci_vendor_id);
+    add_value(res, query, "pci_device_id"                , pDevice.pci_device_id);
+    add_value(res, query, "rev_id"                       , pDevice.rev_id);
+    add_value(res, query, "num_eus_per_sub_slice"        , pDevice.num_eus_per_sub_slice);
+    add_value(res, query, "num_sub_slices_per_slice"     , pDevice.num_sub_slices_per_slice);
+    add_value(res, query, "num_slices"                   , pDevice.num_slices);
+    add_value(res, query, "name"                         , pDevice.name);
+    add_value(res, query, "graphics_adapter_properties"  , pDevice.graphics_adapter_properties);
+    add_value(res, query, "frequency"                    , pDevice.Frequency);
+    add_value(res, query, "pci_subsys_id"                , pDevice.pci_subsys_id);
+    add_value(res, query, "pci_subsys_vendor_id"         , pDevice.pci_subsys_vendor_id);
+    add_value(res, query, "adapter_bdf"                  , json::object({
         {"bus", pDevice.adapter_bdf.bus},
         {"device", pDevice.adapter_bdf.device},
         {"function", pDevice.adapter_bdf.function}
-    };
-    res["num_xe_cores"]                = pDevice.num_xe_cores;
+    }));
+    add_value(res, query, "num_xe_cores"                 , pDevice.num_xe_cores);
 
     ctl_dev_prop_properties_t dpDevice = { 0 };
     dpDevice.Size    = sizeof(ctl_dev_prop_properties_t);
     dpDevice.Version = 0;
     ctl_result_t devResult = ctlDevPropGetProperties(hDevice, &dpDevice);
     if (devResult == CTL_RESULT_SUCCESS)
-        res["is_workstation"] = dpDevice.isWorkstation;
+        add_value(res, query, "is_workstation", dpDevice.isWorkstation);
 
     free(pDevice.pDeviceID);
 
@@ -58,8 +63,9 @@ json::object get_device_properties(ctl_device_adapter_handle_t &hDevice, ctl_res
 http::message_generator
 handle_device(
     http::request<http::string_body>&& req,
-    std::string& target,
-    ctl_api_handle_t& hAPIHandle)
+    std::string &target,
+    const query_type &query,
+    ctl_api_handle_t &hAPIHandle)
 {
     ctl_result_t ctlResult;
 
@@ -77,9 +83,14 @@ handle_device(
     json_body::value_type body;
 
     if (!target.empty()) {
-        size_t pos = target.find_first_of('/');
-        size_t deviceInd = static_cast<size_t>(std::stoul(target.substr(0, pos)));
-        target = target.substr(pos + 1);
+        size_t deviceInd;
+        try {
+            deviceInd = static_cast<size_t>(std::stoul(str_extract(&target, '/')));
+        }
+        catch (std::invalid_argument) {
+            free(hDevices);
+            return bad_request("Invalid device index", req);
+        }
 
         if (deviceInd >= devicesCount) {
             free(hDevices);
@@ -90,53 +101,48 @@ handle_device(
         free(hDevices);
 
         if (!target.empty()) {                                      // /device/{index}/...
-            if (target.rfind("temp/", 0) == 0)                      // /device/{index}/temp
-            {
-                target = target.substr(std::string("temp/").length());
-                return handle_temp(std::move(req), target, hDevice);
-            }
-            else if (target.rfind("fan/", 0) == 0)                  // /device/{index}/fan
-            {
-                target = target.substr(std::string("fan/").length());
-                return handle_fan(std::move(req), target, hDevice);
-            } else {
+
+            if (str_starts_with_erase(&target, "temp/"))            // /device/{index}/temp
+                return handle_temp(std::move(req), target, query, hDevice);
+            else if (str_starts_with_erase(&target, "fan/"))        // /device/{index}/fan
+                return handle_fan(std::move(req), target, query, hDevice);
+            else
                 return not_found(req.target(), req);
-            }
+
         } else {                                                    // /device/{index}
-            // Make sure we can handle the method
             if( req.method() != http::verb::get &&
                 req.method() != http::verb::head)
                 return bad_request("Unknown HTTP-method", req);
 
-            body = get_device_properties(hDevice, ctlResult);
+            body = get_device_properties(hDevice, ctlResult, query);
             if (ctlResult == CTL_RESULT_SUCCESS)
-                return get_response(req, body);
+                return create_response(req, body);
             else
-                return server_error(magic_enum::enum_name(ctlResult), req);
+                return server_error(enum_name(ctlResult), req);
         }
     } else {                                                        // /device
-        // Make sure we can handle the method
         if( req.method() != http::verb::get &&
             req.method() != http::verb::head)
             return bad_request("Unknown HTTP-method", req);
 
         json::object body = {};
 
-        body["count"] = devicesCount;
+        add_value(body, query, "count", devicesCount);
 
         json::array devices;
         for(int i = 0; i < devicesCount; i++) {
             devices.push_back(get_device_properties(hDevices[i], ctlResult));
+
             if (ctlResult != CTL_RESULT_SUCCESS) {
                 free(hDevices);
-                return server_error(magic_enum::enum_name(ctlResult), req);
+                return server_error(enum_name(ctlResult), req);
             }
         }
 
-        body["devices"] = devices;
+        add_value(body, query, "devices", devices);
 
         free(hDevices);
-        return get_response(req, body);
+        return create_response(req, body);
     }
 }
 
