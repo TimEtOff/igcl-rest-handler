@@ -7,12 +7,8 @@
 // Official repository: https://github.com/boostorg/beast
 //
 
-#include "http_server.hpp"
-#include "boost/json/value.hpp"
-#include "device/device.hpp"
-#include <any>
-#include <string>
-#include <vector>
+#include "../http_server.hpp"
+#include "../device/device.hpp"
 
 ctl_api_handle_t hAPIHandle;
 

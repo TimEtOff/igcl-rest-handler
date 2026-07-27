@@ -23,12 +23,12 @@ CPMAddPackage(
 qt_standard_project_setup()
 
 qt_add_executable(igcl-rest-handler
-    main.cpp
-    igcl/igcl_api.h igcl/cApiWrapper.cpp
-    http_server.hpp http_server.cpp result_enum_cast.cpp
-    device/device.hpp device/device_handle.cpp
-    device/temp/temp.hpp device/temp/temp_handle.cpp
-    device/fan/fan.hpp device/fan/fan_handle.cpp
+    src/main.cpp
+    igcl/igcl_api.h             igcl/cApiWrapper.cpp
+    src/http_server.hpp         src/http/http_server.cpp        src/http/result_enum_cast.cpp
+    src/device/device.hpp       src/device/device_handle.cpp
+    src/device/temp/temp.hpp    src/device/temp/temp_handle.cpp
+    src/device/fan/fan.hpp      src/device/fan/fan_handle.cpp
 )
 
 target_link_libraries(igcl-rest-handler

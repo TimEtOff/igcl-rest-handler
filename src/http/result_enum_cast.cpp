@@ -1,7 +1,6 @@
 #include <sstream>
 
-#include "http_server.hpp"
-#include "igcl/igcl_api.h"
+#include "../http_server.hpp"
 
 // ctl_result_t values range is too wide for magic_enum, so it's hardcoded
 std::string enum_name(
