@@ -63,8 +63,7 @@ get_device_properties(
 http::message_generator
 handle_device(
     http::request<http::string_body>&& req,
-    std::string &target,
-    const query_type &query,
+    request_elements_t &reqElements,
     ctl_api_handle_t &hAPIHandle)
 {
     ctl_result_t ctlResult;
@@ -82,10 +81,10 @@ handle_device(
 
     json_body::value_type body;
 
-    if (!target.empty()) {
+    if (!reqElements.target.empty()) {
         size_t deviceInd;
         try {
-            deviceInd = static_cast<size_t>(std::stoul(str_extract(&target, '/')));
+            deviceInd = static_cast<size_t>(std::stoul(str_extract(&reqElements.target, '/')));
         }
         catch (std::invalid_argument) {
             free(hDevices);
@@ -100,12 +99,12 @@ handle_device(
         ctl_device_adapter_handle_t hDevice = hDevices[deviceInd];
         free(hDevices);
 
-        if (!target.empty()) {                                      // /device/{index}/...
+        if (!reqElements.target.empty()) {                                      // /device/{index}/...
 
-            if (str_starts_with_erase(&target, "temp/"))            // /device/{index}/temp
-                return handle_temp(std::move(req), target, query, hDevice);
-            else if (str_starts_with_erase(&target, "fan/"))        // /device/{index}/fan
-                return handle_fan(std::move(req), target, query, hDevice);
+            if (str_starts_with_erase(&reqElements.target, "temp/"))            // /device/{index}/temp
+                return handle_temp(std::move(req), reqElements, hDevice);
+            else if (str_starts_with_erase(&reqElements.target, "fan/"))        // /device/{index}/fan
+                return handle_fan(std::move(req), reqElements, hDevice);
             else
                 return not_found(req.target(), req);
 
@@ -114,7 +113,7 @@ handle_device(
                 req.method() != http::verb::head)
                 return bad_request("Unknown HTTP-method", req);
 
-            body = get_device_properties(hDevice, ctlResult, query);
+            body = get_device_properties(hDevice, ctlResult, reqElements.query);
             if (ctlResult == CTL_RESULT_SUCCESS)
                 return create_response(req, body);
             else
@@ -127,7 +126,7 @@ handle_device(
 
         json::object body = {};
 
-        add_value(body, query, "count", devicesCount);
+        add_value(body, reqElements.query, "count", devicesCount);
 
         json::array devices;
         for(int i = 0; i < devicesCount; i++) {
@@ -139,7 +138,7 @@ handle_device(
             }
         }
 
-        add_value(body, query, "devices", devices);
+        add_value(body, reqElements.query, "devices", devices);
 
         free(hDevices);
         return create_response(req, body);

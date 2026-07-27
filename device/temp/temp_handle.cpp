@@ -47,9 +47,8 @@ get_temp_state(
 http::message_generator
 handle_temp(
     http::request<http::string_body>&& req,
-    std::string &target,
-    const query_type &query,
-    ctl_device_adapter_handle_t& hDevice)
+    request_elements_t &reqElements,
+    ctl_device_adapter_handle_t &hDevice)
 {
     ctl_result_t ctlResult;
 
@@ -66,10 +65,10 @@ handle_temp(
 
     json_body::value_type body;
 
-    if (!target.empty()) {
+    if (!reqElements.target.empty()) {
         size_t tempInd;
         try {
-            tempInd = static_cast<size_t>(std::stoul(str_extract(&target, '/')));
+            tempInd = static_cast<size_t>(std::stoul(str_extract(&reqElements.target, '/')));
         }
         catch (std::invalid_argument) {
             free(hTemps);
@@ -84,13 +83,13 @@ handle_temp(
         ctl_temp_handle_t hTemp = hTemps[tempInd];
         free(hTemps);
 
-        if (!target.empty()) {                                      // /device/{i}/temp/{index}/state
-            if (str_starts_with_erase(&target, "state/") && target.empty()) {
+        if (!reqElements.target.empty()) {                                      // /device/{i}/temp/{index}/state
+            if (str_starts_with_erase(&reqElements.target, "state/") && reqElements.target.empty()) {
                 if( req.method() != http::verb::get &&
                     req.method() != http::verb::head)
                     return bad_request("Unknown HTTP-method", req);
 
-                body = get_temp_state(hTemp, ctlResult, query);
+                body = get_temp_state(hTemp, ctlResult, reqElements.query);
             } else
                 return not_found(req.target(), req);
 
@@ -99,7 +98,7 @@ handle_temp(
                 req.method() != http::verb::head)
                 return bad_request("Unknown HTTP-method", req);
 
-            body = get_temp_properties(hTemp, ctlResult, query);
+            body = get_temp_properties(hTemp, ctlResult, reqElements.query);
         }
 
         if (ctlResult == CTL_RESULT_SUCCESS)
@@ -114,7 +113,7 @@ handle_temp(
 
         json::object body = {};
 
-        add_value(body, query, "count", sensorCount);
+        add_value(body, reqElements.query, "count", sensorCount);
 
         json::array sensors;
         for(int i = 0; i < sensorCount; i++) {
@@ -126,7 +125,7 @@ handle_temp(
             }
         }
 
-        add_value(body, query, "sensors", sensors);
+        add_value(body, reqElements.query, "sensors", sensors);
 
         free(hTemps);
         return create_response(req, body);

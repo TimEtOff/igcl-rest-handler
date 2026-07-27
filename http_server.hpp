@@ -29,6 +29,12 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 typedef std::map<std::string, std::any> query_type;
 
+typedef struct _request_elements_t
+{
+    std::string target;
+    query_type query;
+} request_elements_t;
+
 // ctl_result_t values range is too wide for magic_enum, so it's hardcoded
 std::string enum_name(
     ctl_result_t value) noexcept;

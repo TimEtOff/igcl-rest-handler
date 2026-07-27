@@ -282,15 +282,16 @@ handle_request(
         return bad_request("Illegal request-target", req);
 
     std::string temp = req.target();
-    std::string target = str_extract(&temp, '?');
-    std::map<std::string, std::any> query = split_query(temp);
+    request_elements_t reqElements;
+    reqElements.target = str_extract(&temp, '?');
+    reqElements.query = split_query(temp);
 
-    if(target.back() != '/')
-        target += '/';
+    if(reqElements.target.back() != '/')
+        reqElements.target += '/';
 
-    if (str_starts_with_erase(&target, "/device/"))
+    if (str_starts_with_erase(&reqElements.target, "/device/"))
     {
-        return handle_device(std::move(req), target, query, hAPIHandle);
+        return handle_device(std::move(req), reqElements, hAPIHandle);
     } else
     {
         return not_found(req.target(), req);
