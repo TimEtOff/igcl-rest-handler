@@ -191,6 +191,35 @@ split_fields(
     return res;
 }
 
+bool
+parse_json_body(
+    http::request<http::string_body> const& req,
+    json_body::value_type &body)
+{
+    auto const content_type = std::string(req[http::field::content_type]);
+    bool is_json = content_type == mime_type(".json") ||
+        content_type.rfind("application/json", 0) == 0;
+
+    if (!is_json)
+        return false;
+
+    if (req.body().empty())
+    {
+        body = json::object{};
+        return true;
+    }
+
+    try
+    {
+        body = json::parse(req.body());
+        return true;
+    }
+    catch (std::exception const&)
+    {
+        return false;
+    }
+}
+
 query_type
 split_query(
     const std::string &query)
@@ -281,8 +310,9 @@ handle_request(
     request_elements_t reqElements;
     reqElements.target = str_extract(&temp, '?');
     reqElements.query = split_query(temp);
+    parse_json_body(req, reqElements.body);
 
-    if(reqElements.target.back() != '/')
+    if (reqElements.target.back() != '/')
         reqElements.target += '/';
 
     if (str_starts_with_erase(&reqElements.target, "/device/"))
@@ -296,11 +326,36 @@ handle_request(
 
 //------------------------------------------------------------------------------
 
+std::string
+timestamp()
+{
+    auto t = std::time(nullptr);
+    tm ttm;
+    localtime_s(&ttm, &t);
+
+    std::stringstream ss;
+    ss << "[" << std::put_time(&ttm, "%Y/%m/%d %H:%M:%S") << "]";
+
+    return ss.str();
+}
+
 // Report a failure
 void
 fail(beast::error_code ec, char const* what)
 {
-    std::cerr << what << ": " << ec.message() << "\n";
+    std::cerr << timestamp() << "[FAIL]" << " [" << what << "] " << ec.message() << std::endl;
+}
+
+void
+fail(const std::string &message, char const* what)
+{
+    std::cerr << timestamp() << "[FAIL]" << " ["  << what << "] " << message << std::endl;
+}
+
+void
+info(const std::string &message, char const* what)
+{
+    std::cout << timestamp() << "[INFO]" << " ["  << what << "] " << message << std::endl;
 }
 
 // Handles an HTTP server connection
@@ -362,6 +417,8 @@ public:
         // This means they closed the connection
         if(ec == http::error::end_of_stream)
             return do_close();
+
+        info(std::string(req_.method_string()) + " " + std::string(req_.target()), "request");
 
         if(ec == beast::error::timeout)
         {
@@ -558,7 +615,7 @@ int http_run(void)
 
     ctl_result_t res = ctlInit(&CtlInitArgs, &hAPIHandle);
     if (res != CTL_RESULT_SUCCESS) {
-        std::cout << "Can't initialize the API: " << magic_enum::enum_name(res) << std::endl;
+        fail("Can't initialize the API: " + std::string(magic_enum::enum_name(res)), "api");
         return EXIT_FAILURE;
     } else {
 
@@ -585,6 +642,7 @@ int http_run(void)
             {
                 ioc.run();
             });
+        info("Starting HTTP server", "server");
         ioc.run();
 
         return EXIT_SUCCESS;

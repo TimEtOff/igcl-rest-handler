@@ -50,6 +50,8 @@ ctl_result_t ctlFanGetProperties(ctl_fan_handle_t hFan, ctl_fan_properties_t *pP
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
+| fan_index | Requested fan index. Should be the same as in request target | int |
 | can_control | Indicates if software can control the fan speed assuming the user has permissions | bool |
 | supported_modes | Bitfield of supported fan configuration modes (1<<[ctl_fan_speed_mode_t](../../enums.md#ctl_fan_speed_mode_t)) | int |
 | supported_units | Bitfield of supported fan speed units (1<<[ctl_fan_speed_units_t](../../enums.md#ctl_fan_speed_units_t)) | int |
@@ -59,9 +61,6 @@ ctl_result_t ctlFanGetProperties(ctl_fan_handle_t hFan, ctl_fan_properties_t *pP
 ## Get fan config
 
 Returns a fan configurations and the current fan speed mode (default, fixed, temp-speed table).
-
-> [!WARNING]
-> Not yet implemented
 
 **Path**
 
@@ -77,6 +76,8 @@ ctl_result_t ctlFanGetConfig(ctl_fan_handle_t hFan, ctl_fan_config_t *pConfig)
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
+| fan_index | Requested fan index. Should be the same as in request target | int |
 | mode | The fan speed mode (fixed, temp-speed table) | string ([ctl_fan_speed_mode_t](../../enums.md#ctl_fan_speed_mode_t)) |
 | **speed_fixed** | The current fixed fan setting | object |
 | &nbsp;&nbsp;&nbsp;&nbsp;speed | The speed of the fan. On output, a value of -1 indicates that there is no fixed fan speed setting | int |
@@ -91,14 +92,14 @@ ctl_result_t ctlFanGetConfig(ctl_fan_handle_t hFan, ctl_fan_config_t *pConfig)
 
 ## Change fan mode
 
-With no parameters or `mode` parameter set to `"CTL_FAN_SPEED_MODE_DEFAULT"`, configure the fan to run with hardware factory settings (set mode to [CTL_FAN_SPEED_MODE_DEFAULT](../../enums.md#ctl-fan-speed-mode-default)).
+With no parameters or `mode` parameter set to `"CTL_FAN_SPEED_MODE_DEFAULT"`, configure the fan to run with hardware factory settings (sets mode to [CTL_FAN_SPEED_MODE_DEFAULT](../../enums.md#ctl-fan-speed-mode-default)).
 
-With `mode` parameter set to `"CTL_FAN_SPEED_MODE_FIXED"`, configure the fan to rotate at a fixed `speed` parameter (set mode to [CTL_FAN_SPEED_MODE_FIXED](../../enums.md#ctl-fan-speed-mode-fixed)).
+With `mode` parameter set to `"CTL_FAN_SPEED_MODE_FIXED"`, configure the fan to rotate at a fixed `speed` parameter (sets mode to [CTL_FAN_SPEED_MODE_FIXED](../../enums.md#ctl-fan-speed-mode-fixed)).
 
-With `mode` parameter set to `"CTL_FAN_SPEED_MODE_TABLE"`, configure the fan to adjust speed based on a temperature/speed `table` parameter (set mode to [CTL_FAN_SPEED_MODE_TABLE]((../../enums.md#ctl-fan-speed-mode-table)))
+With `mode` parameter set to `"CTL_FAN_SPEED_MODE_TABLE"`, configure the fan to adjust speed based on a temperature/speed `table` parameter, sorted on temperature from lowest to highest, invalid argument error if not (sets mode to [CTL_FAN_SPEED_MODE_TABLE]((../../enums.md#ctl-fan-speed-mode-table))).
 
-> [!WARNING]
-> Not yet implemented
+> [!IMPORTANT]
+> Could not test it entirely on my hardware. Might not work correctly.
 
 **Path**
 
@@ -122,7 +123,7 @@ ctl_result_t ctlFanSetSpeedTableMode(ctl_fan_handle_t hFan, const ctl_fan_speed_
 | &nbsp;&nbsp;&nbsp;&nbsp;units | The units that the fan speed is expressed in. On output, if fan speed is -1 then units should be ignored | string ([ctl_fan_speed_units_t](../../enums.md#ctl_fan_speed_units_t)) |
 | **table** | A table containing temperature/speed pairs | object |
 | &nbsp;&nbsp;&nbsp;&nbsp;num_points | The number of valid points in the fan speed table. 0 means that there is no fan speed table configured. -1 means that a fan speed table is not supported by the hardware | int |
-| &nbsp;&nbsp;&nbsp;&nbsp;table | Array of temperature/fan speed pairs. The table is ordered based on temperature from lowest to highest | array[object] |
+| &nbsp;&nbsp;&nbsp;&nbsp;**table** | Array of temperature/fan speed pairs. The table is ordered based on temperature from lowest to highest | array[object] |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;temperature | Temperature in degrees Celsius | int |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**speed** | The speed of the fan | object |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;speed | The speed of the fan. On output, a value of -1 indicates that there is no fixed fan speed setting | int |
@@ -156,5 +157,7 @@ ctl_result_t ctlFanGetState(ctl_fan_handle_t hFan, ctl_fan_speed_units_t units, 
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
+| fan_index | Requested fan index. Should be the same as in request target | int |
 | units | The units in which the fan speed should be returned, from request query | string ([ctl_fan_speed_units_t](../../enums.md#ctl_fan_speed_units_t)) |
 | speed | Will contain the current speed of the fan in the units requested. A value of -1 indicates that the fan speed cannot be measured | int |

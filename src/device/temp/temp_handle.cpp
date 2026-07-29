@@ -48,7 +48,8 @@ http::message_generator
 handle_temp(
     http::request<http::string_body>&& req,
     request_elements_t &reqElements,
-    ctl_device_adapter_handle_t &hDevice)
+    ctl_device_adapter_handle_t &hDevice,
+    json::object &body_base)
 {
     ctl_result_t ctlResult;
 
@@ -62,8 +63,6 @@ handle_temp(
         free(hTemps);
         return server_error("ctlEnumTemperatureSensors: " + std::string(magic_enum::enum_name(ctlResult)), req);
     }
-
-    json_body::value_type body;
 
     if (!reqElements.target.empty()) {
         size_t tempInd;
@@ -83,13 +82,18 @@ handle_temp(
         ctl_temp_handle_t hTemp = hTemps[tempInd];
         free(hTemps);
 
+        // Add temp index to base body
+        add_value(body_base, reqElements.query, "temp_index", tempInd);
+
         if (!reqElements.target.empty()) {                                      // /device/{i}/temp/{index}/state
             if (str_starts_with_erase(&reqElements.target, "state/") && reqElements.target.empty()) {
                 if( req.method() != http::verb::get &&
                     req.method() != http::verb::head)
                     return bad_request("Unknown HTTP-method", req);
 
-                body = get_temp_state(hTemp, ctlResult, reqElements.query);
+                for (auto& prop : get_temp_state(hTemp, ctlResult, reqElements.query)) {
+                    body_base[prop.key()] = prop.value();
+                }
             } else
                 return not_found(req.target(), req);
 
@@ -98,11 +102,13 @@ handle_temp(
                 req.method() != http::verb::head)
                 return bad_request("Unknown HTTP-method", req);
 
-            body = get_temp_properties(hTemp, ctlResult, reqElements.query);
+            for (auto& prop : get_temp_properties(hTemp, ctlResult, reqElements.query)) {
+                body_base[prop.key()] = prop.value();
+            }
         }
 
         if (ctlResult == CTL_RESULT_SUCCESS)
-            return create_response(req, body);
+            return create_response(req, body_base);
         else
             return server_error(enum_name(ctlResult), req);
     } else {                                                        // /device/{i}/temp
@@ -111,9 +117,7 @@ handle_temp(
             req.method() != http::verb::head)
             return bad_request("Unknown HTTP-method", req);
 
-        json::object body = {};
-
-        add_value(body, reqElements.query, "count", sensorCount);
+        add_value(body_base, reqElements.query, "count", sensorCount);
 
         json::array sensors;
         for(int i = 0; i < sensorCount; i++) {
@@ -125,10 +129,10 @@ handle_temp(
             }
         }
 
-        add_value(body, reqElements.query, "sensors", sensors);
+        add_value(body_base, reqElements.query, "sensors", sensors);
 
         free(hTemps);
-        return create_response(req, body);
+        return create_response(req, body_base);
     }
 }
 

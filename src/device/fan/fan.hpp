@@ -7,6 +7,7 @@ http::message_generator
 handle_fan(
     http::request<http::string_body>&& req,
     request_elements_t &reqElements,
-    ctl_device_adapter_handle_t &hDevice);
+    ctl_device_adapter_handle_t &hDevice,
+    json::object &body_base);
 
 #endif // FAN_HPP

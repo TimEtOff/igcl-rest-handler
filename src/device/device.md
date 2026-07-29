@@ -51,6 +51,7 @@ ctl_result_t ctlDevPropGetProperties(ctl_device_adapter_handle_t hDAhandle, ctl_
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
 | device_type | Device Type (Graphics, System) | string ([ctl_device_type_t](../enums.md#ctl_device_type_t)) |
 | supported_subfunction_flags | Supported functions as a byte | int ([ctl_supported_functions_flag_t](../enums.md#ctl_supported_functions_flag_t)) |
 | driver_version | Driver version | int |

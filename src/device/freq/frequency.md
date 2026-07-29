@@ -56,6 +56,8 @@ ctl_result_t ctlFrequencyGetProperties(ctl_freq_handle_t hFrequency, ctl_freq_pr
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
+| freq_index | Requested frequence domain index. Should be the same as in request target | int |
 | type | The hardware block that this frequency domain controls (GPU, memory, ...) | string ([ctl_freq_domain_t](../../enums.md#ctl_freq_domain_t)) |
 | can_control | Indicates if software can control the frequency of this domain assuming the user has permissions | bool |
 | min | The minimum hardware clock frequency in units of MHz | float |
@@ -82,6 +84,8 @@ ctl_result_t ctlFrequencyGetAvailableClocks(ctl_freq_handle_t hFrequency, uint32
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
+| freq_index | Requested frequence domain index. Should be the same as in request target | int |
 | count | The number of frequencies | int |
 | frequencies | Array of frequencies in units of MHz and sorted from slowest to fastest | array[float] |
 
@@ -106,6 +110,8 @@ ctl_result_t ctlFrequencyGetRange(ctl_freq_handle_t hFrequency, ctl_freq_range_t
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
+| freq_index | Requested frequence domain index. Should be the same as in request target | int |
 | min | The min frequency in MHz below which hardware frequency management will not request frequencies. A negative value indicates that no external minimum frequency limit is in effect. | float |
 | max | The max frequency in MHz above which hardware frequency management will not request frequencies. A negative number indicates that no external maximum frequency limit is in effect | float |
 
@@ -130,6 +136,8 @@ ctl_result_t ctlFrequencySetRange(ctl_freq_handle_t hFrequency, const ctl_freq_r
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
+| freq_index | Requested frequence domain index. Should be the same as in request target | int |
 | min | The min frequency in MHz below which hardware frequency management will not request frequencies. Setting to 0 will permit the frequency to go down to the hardware minimum while setting to -1 will return the min frequency limit to the factory value (can be larger than the hardware min). | float |
 | max | The max frequency in MHz above which hardware frequency management will not request frequencies. Setting to 0 or a very big number will permit the frequency to go all the way up to the hardware maximum while setting to -1 will return the max frequency to the factory value (which can be less than the hardware max) | float |
 
@@ -158,6 +166,8 @@ ctl_result_t ctlFrequencyGetState(ctl_freq_handle_t hFrequency, ctl_freq_state_t
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
+| freq_index | Requested frequence domain index. Should be the same as in request target | int |
 | current_voltage | Current voltage in Volts. A negative value indicates that this property is not known | float |
 | request | The current frequency request in MHz. A negative value indicates that this property is not known | float |
 | tdp | The maximum frequency in MHz supported under the current TDP conditions. This fluctuates dynamically based on the power and thermal limits of the part. A negative value indicates that this property is not known | float |
@@ -186,5 +196,7 @@ ctl_result_t ctlFrequencyGetState(ctl_freq_handle_t hFrequency, ctl_freq_state_t
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
+| freq_index | Requested frequence domain index. Should be the same as in request target | int |
 | throttle_time | The monotonic counter of time in microseconds that the frequency has been limited by the hardware | int |
 | timestamp | Microsecond timestamp when throttle_time was captured. This timestamp should only be used to calculate delta time between snapshots of this structure. Never take the delta of this timestamp with the timestamp from a different structure since they are not guaranteed to have the same base. The absolute value of the timestamp is only valid during within the application and may be different on the next execution | int |

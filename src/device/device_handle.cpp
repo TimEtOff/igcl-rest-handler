@@ -99,12 +99,16 @@ handle_device(
         ctl_device_adapter_handle_t hDevice = hDevices[deviceInd];
         free(hDevices);
 
+        // Create base response body with device index
+        json::object body_base = {};
+        add_value(body_base, reqElements.query, "device_index", deviceInd);
+
         if (!reqElements.target.empty()) {                                      // /device/{index}/...
 
             if (str_starts_with_erase(&reqElements.target, "temp/"))            // /device/{index}/temp
-                return handle_temp(std::move(req), reqElements, hDevice);
+                return handle_temp(std::move(req), reqElements, hDevice, body_base);
             else if (str_starts_with_erase(&reqElements.target, "fan/"))        // /device/{index}/fan
-                return handle_fan(std::move(req), reqElements, hDevice);
+                return handle_fan(std::move(req), reqElements, hDevice, body_base);
             else
                 return not_found(req.target(), req);
 
@@ -113,9 +117,13 @@ handle_device(
                 req.method() != http::verb::head)
                 return bad_request("Unknown HTTP-method", req);
 
-            body = get_device_properties(hDevice, ctlResult, reqElements.query);
+            // Merge device properties into body
+            for (auto& prop : get_device_properties(hDevice, ctlResult, reqElements.query)) {
+                body_base[prop.key()] = prop.value();
+            }
+
             if (ctlResult == CTL_RESULT_SUCCESS)
-                return create_response(req, body);
+                return create_response(req, body_base);
             else
                 return server_error(enum_name(ctlResult), req);
         }

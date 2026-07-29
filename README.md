@@ -33,12 +33,12 @@ The API works by layers, for exemple:
 
 For the details of every methods, see related handle page:
 
-* [Devices 🢱](./device/device.md)
-  * [Temperature sensors 🢱](./device/temp/temperature.md)
-  * [Frequency domains 🢱](./device/freq/frequency.md)
-  * [LEDs 🢱](./device/led/led.md)
-  * [Power domains 🢱](./device/power/power.md)
-  * [Fans 🢱](./device/fan/fan.md)
-  * [Memory modules 🢱](./device/memory/memory.md)
-  * [Engine groups 🢱](./device/engine/engine.md)
-  * [Display output 🢱](./device/display/display.md)
+* [Devices 🢱](src/device/device.md)
+  * [Temperature sensors 🢱](src/device/temp/temperature.md)
+  * [Frequency domains 🢱](src/device/freq/frequency.md)
+  * [LEDs 🢱](src/device/led/led.md)
+  * [Power domains 🢱](src/device/power/power.md)
+  * [Fans 🢱](src/device/fan/fan.md)
+  * [Memory modules 🢱](src/device/memory/memory.md)
+  * [Engine groups 🢱](src/device/engine/engine.md)
+  * [Display output 🢱](src/device/display/display.md)

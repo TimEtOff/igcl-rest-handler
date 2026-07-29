@@ -12,8 +12,11 @@
 #include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <iomanip>
+#include <ctime>
 #include <memory>
 #include <string>
+#include <sstream>
 #include <charconv>
 #include <thread>
 #include <vector>
@@ -34,6 +37,7 @@ typedef struct _request_elements_t
 {
     std::string target;
     query_type query;
+    json_body::value_type body;
 } request_elements_t;
 
 // ctl_result_t values range is too wide for magic_enum, so it's hardcoded
@@ -44,7 +48,14 @@ beast::string_view mime_type(beast::string_view path);
 
 std::string path_cat(beast::string_view base, beast::string_view path);
 
-void fail(beast::error_code ec, char const* what);
+void
+fail(beast::error_code ec, char const* what);
+
+void
+fail(const std::string &message, char const* what);
+
+void
+info(const std::string &message, char const* what);
 
 int http_run(void);
 

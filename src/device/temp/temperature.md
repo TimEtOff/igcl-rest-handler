@@ -50,6 +50,8 @@ ctl_result_t ctlTemperatureGetProperties(ctl_temp_handle_t hTemperature, ctl_tem
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
+| temp_index | Requested temp sensor index. Should be the same as in request target | int |
 | type | Which part of the device the temperature sensor measures | string ([ctl_temp_sensors_t](../../enums.md#ctl_temp_sensors_t)) |
 | max_temperature | Will contain the maximum temperature for the specific device in degrees Celsius | float |
 
@@ -71,4 +73,6 @@ ctl_result_t ctlTemperatureGetState(ctl_temp_handle_t hTemperature, double *pTem
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
+| device_index | Requested device index. Should be the same as in request target | int |
+| temp_index | Requested temp sensor index. Should be the same as in request target | int |
 | temperature | Sensor temperature in degrees Celcius | float |
