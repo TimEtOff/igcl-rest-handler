@@ -23,6 +23,8 @@ CPMAddPackage(
 
 qt_standard_project_setup()
 
+#TODO Mac/Linux executable icon & deployement
+
 qt_add_executable(igcl-rest-handler
     src/main.cpp
     igcl/igcl_api.h             igcl/cApiWrapper.cpp
@@ -30,7 +32,7 @@ qt_add_executable(igcl-rest-handler
     src/device/device.hpp       src/device/device_handle.cpp
     src/device/temp/temp.hpp    src/device/temp/temp_handle.cpp
     src/device/fan/fan.hpp      src/device/fan/fan_handle.cpp
-    resources/resources.qrc
+    resources/resources.qrc     resources/images/app.rc
 )
 
 target_link_libraries(igcl-rest-handler
@@ -42,6 +44,26 @@ target_link_libraries(igcl-rest-handler
     ws2_32
     mswsock
 )
+
+if(WIN32)
+    get_target_property(QT_CORE_DLL Qt6::Core IMPORTED_LOCATION_RELEASE)
+    if(NOT QT_CORE_DLL)
+        get_target_property(QT_CORE_DLL Qt6::Core IMPORTED_LOCATION)
+    endif()
+
+    get_filename_component(QT_BIN_DIR "${QT_CORE_DLL}" DIRECTORY)
+    find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt windeployqt6 HINTS "${QT_BIN_DIR}")
+
+    if(WINDEPLOYQT_EXECUTABLE)
+        add_custom_command(TARGET igcl-rest-handler POST_BUILD
+            COMMAND "${WINDEPLOYQT_EXECUTABLE}" --no-translations --compiler-runtime $<TARGET_FILE:igcl-rest-handler>
+            COMMENT "Deploying Qt runtime next to igcl-rest-handler"
+            VERBATIM
+        )
+    else()
+        message(WARNING "windeployqt was not found, so the executable may require Qt to be on PATH at runtime")
+    endif()
+endif()
 
 install(TARGETS igcl-rest-handler
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
