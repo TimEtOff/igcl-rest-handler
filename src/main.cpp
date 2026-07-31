@@ -1,8 +1,41 @@
+#include <atomic>
+#include <charconv>
+#include <chrono>
+#include <cstdint>
+#include <future>
 #include <magic_enum/magic_enum.hpp>
-#include <iostream>
+#include <QApplication>
+#include <QSystemTrayIcon>
+#include <QMenu>
+#include <QInputDialog>
+#include <qapplication.h>
+#include <qcoreapplication.h>
+#include <qdialog.h>
+#include <qicon.h>
+#include <qinputdialog.h>
+#include <qsystemtrayicon.h>
+#include <qurl.h>
+#include <qwidget.h>
 #include <string>
-#include <QCoreApplication>
+#include <thread>
 #include "http_server.hpp"
+
+#define APP_VERSION "v0.1.0"
+
+
+QApplication *app;
+QIcon *appIcon;
+QSystemTrayIcon *trayIcon;
+QMenu *menu;
+QAction *portAction;
+QAction *allowEditAction;
+QAction *closeAction;
+
+std::future<int> httpServerThread;
+
+std::atomic<bool> runServer;
+std::atomic<unsigned short> serverPort;
+std::atomic<bool> allowEdit;
 
 std::string getReadableVersion(uint64_t integer)
 {
@@ -17,128 +50,81 @@ std::string getReadableVersion(uint64_t integer)
     return str;
 }
 
-void init()
+void startServer()
 {
-    ctl_init_args_t CtlInitArgs;
-    ctl_api_handle_t hAPIHandle;
+    runServer = true;
 
-    CtlInitArgs.AppVersion = CTL_MAKE_VERSION(CTL_IMPL_MAJOR_VERSION, CTL_IMPL_MINOR_VERSION);
-    CtlInitArgs.flags = CTL_INIT_FLAG_USE_LEVEL_ZERO;
-    CtlInitArgs.Size = sizeof(CtlInitArgs);
-    CtlInitArgs.Version = 0;
-    ZeroMemory(&CtlInitArgs.ApplicationUID, sizeof(ctl_application_id_t));
+    httpServerThread = std::async(std::launch::async, http_run);
 
-    ctl_result_t res = ctlInit(&CtlInitArgs, &hAPIHandle);
-    if (res != CTL_RESULT_SUCCESS)
-        std::cout << "Can't initialize the API" << std::endl;
-    else {
-        // Enumerate all adapters
-        ctl_device_adapter_handle_t *hDevices = nullptr;
-        uint32_t Adapter_count = 0;
-        ctlEnumerateDevices(hAPIHandle,&Adapter_count, hDevices);
-        hDevices = (ctl_device_adapter_handle_t *)malloc(sizeof(ctl_device_adapter_handle_t) * Adapter_count);
-        ctlEnumerateDevices(hAPIHandle,&Adapter_count, hDevices);
+    portAction->setText(QString::fromStdString("Port: " + std::to_string(static_cast<unsigned short>(serverPort))));
+}
 
-        //Use the handle to call the api's
+void changePort()
+{
+    //bool ok = false;
+    //int nPort = QInputDialog::getInt(nullptr, , , serverPort, 0, , 1, &ok);
+    auto *dialog = new QInputDialog(nullptr);
+    dialog->setWindowTitle("Change port");
+    dialog->setWindowIcon(*appIcon);
+    dialog->setLabelText("Change server port to:");
+    dialog->setIntMinimum(0);
+    dialog->setIntMaximum(65535);
+    dialog->setIntValue(static_cast<int>(serverPort));
+    dialog->setModal(true);
 
-        std::cout << "Adapter count: " << Adapter_count << std::endl;
+    if (dialog->exec() == QDialog::Accepted) {
+        runServer = false;
+        info("Stopped HTTP server", "server");
+        serverPort = dialog->intValue();
 
-        for(int index = 0; index < Adapter_count; index++) {
-            // Get Adapter Properties
-            ctl_device_adapter_properties_t StDeviceAdapterProperties = { 0 };
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 
-            //OS specific initialization.This is an Windows example
-
-            StDeviceAdapterProperties.Size           = sizeof(ctl_device_adapter_properties_t);
-            StDeviceAdapterProperties.pDeviceID      = malloc(sizeof(LUID));
-            StDeviceAdapterProperties.device_id_size = sizeof(LUID);
-            ctlGetDeviceProperties(hDevices[index], &StDeviceAdapterProperties);
-            std::cout << index << ": " << StDeviceAdapterProperties.name;
-            std::cout << " (type: " << magic_enum::enum_name(StDeviceAdapterProperties.device_type);
-            std::cout << " | version: " << getReadableVersion(StDeviceAdapterProperties.driver_version);
-            std::cout << " | fcts: " << StDeviceAdapterProperties.supported_subfunction_flags << ")" << std::endl;
-
-            free(StDeviceAdapterProperties.pDeviceID);
-
-            uint32_t pSensorCount;
-            ctl_temp_handle_t *phTemps = nullptr;
-            ctlEnumTemperatureSensors(hDevices[index], &pSensorCount, phTemps);
-            phTemps = (ctl_temp_handle_t *)malloc(sizeof(ctl_temp_handle_t) * pSensorCount);
-            ctlEnumTemperatureSensors(hDevices[index], &pSensorCount, phTemps);
-
-            std::cout << "  Sensor count: " << pSensorCount << std::endl;
-
-            for (int iSens = 0; iSens < pSensorCount; iSens++) {
-                double temp;
-
-                ctl_temp_properties_t tempProp;
-                tempProp.Size = sizeof(ctl_temp_properties_t);
-                tempProp.Version = 0;
-
-                ctl_result_t resTemp = ctlTemperatureGetProperties(phTemps[iSens], &tempProp);
-
-                if (resTemp == CTL_RESULT_SUCCESS) {
-                    ctlTemperatureGetState(phTemps[iSens], &temp);
-                    std::cout << "  " << magic_enum::enum_name(tempProp.type) << ": " << temp << "°C - Max: " << tempProp.maxTemperature << "°C" << std::endl;
-                } else {
-                    std::cout << "  Error: " << "0x" << std::hex << resTemp << std::endl;
-                }
-            }
-
-            free(phTemps);
-
-            uint32_t pFansCount;
-            ctl_fan_handle_t *phFans = nullptr;
-            ctlEnumFans(hDevices[index], &pFansCount, phFans);
-            phFans = (ctl_fan_handle_t *)malloc(sizeof(ctl_fan_handle_t) * pFansCount);
-            ctlEnumFans(hDevices[index], &pFansCount, phFans);
-
-            std::cout << "  Fans count: " << pFansCount << std::endl;
-
-            for (int iFan = 0; iFan < pFansCount; iFan++) {
-                ctl_fan_config_t fanConfig;
-                fanConfig.Size = sizeof(ctl_fan_config_t);
-                fanConfig.Version = 0;
-
-                ctl_result_t resFan = ctlFanGetConfig(phFans[iFan], &fanConfig);
-
-                if (resFan == CTL_RESULT_SUCCESS) {
-                    int rpm;
-                    ctlFanGetState(phFans[iFan], ctl_fan_speed_units_t::CTL_FAN_SPEED_UNITS_RPM, &rpm);
-
-                    std::cout << "  Mode: " << magic_enum::enum_name(fanConfig.mode);
-                    std::cout << " " << rpm << " RPMs";
-                    std::cout << " (Fixed: " << fanConfig.speedFixed.speed << " " << magic_enum::enum_name(fanConfig.speedFixed.units);
-                    std::cout << " | Table: " << fanConfig.speedTable.numPoints << " points)" << std::endl;
-                } else {
-                    std::cout << "  Error: " << "0x" << std::hex << resFan << std::endl;
-                }
-            }
-
-            free(phFans);
-        }
-
-        free(hDevices);
+        startServer();
     }
+}
+
+void toggledEdit(bool enabled)
+{
+    allowEdit = enabled;
+}
+
+void closeApp()
+{
+    runServer = false;
+    info("Closing app...", "app");
+    app->exit(httpServerThread.get());
 }
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication app(argc, argv);
+    app = new QApplication(argc, argv);
+    app->setQuitOnLastWindowClosed(false);
+    appIcon = new QIcon(":/images/app.ico");
 
-    // Set up code that uses the Qt event loop here.
-    // Call app.quit() or app.exit() to quit the application.
-    // A not very useful example would be including
-    // #include <QTimer>
-    // near the top of the file and calling
-    // QTimer::singleShot(5000, &a, &QCoreApplication::quit);
-    // which quits the application after 5 seconds.
+    menu = new QMenu();
 
-    // If you do not need a running Qt event loop, remove the call
-    // to app.exec() or use the Non-Qt Plain C++ Application template.
+    portAction = menu->addAction("&Port: ");
+    QObject::connect(portAction, &QAction::triggered, &changePort);
 
-    //init();
+    allowEditAction = menu->addAction("Allow &edits");
+    allowEditAction->setCheckable(true);
+    QObject::connect(allowEditAction, &QAction::toggled, &toggledEdit);
 
-    //return app.exec();
-    return http_run();
+    closeAction = menu->addAction("&Close");
+    QObject::connect(closeAction, &QAction::triggered, &closeApp);
+
+    trayIcon = new QSystemTrayIcon(app);
+    trayIcon->setToolTip(QString::fromStdString(std::string("IGCL REST Handler ") + std::string(APP_VERSION)));
+    trayIcon->setIcon(*appIcon);
+    trayIcon->setContextMenu(menu);
+
+    serverPort = 9738;
+    allowEdit = true;
+
+    startServer();
+
+    allowEditAction->setChecked(allowEdit);
+
+    trayIcon->show();
+    return app->exec();
 }

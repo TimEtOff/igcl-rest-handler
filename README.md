@@ -15,7 +15,9 @@ This application is meant to be an easier way for third-parties to access [Intel
 This app will run as a service in the background and wait to receive requests from any other programs.
 It will also appear in your system tray for informations and settings.
 
-_//TODO System tray explanations_
+![System tray icon](./resources/images/system_tray_icon.png)
+
+You can see/change the binded port, and disable edits to allow only data retreiving (GET and HEAD methods).
 
 ## Integration
 
@@ -25,7 +27,7 @@ The API works by layers, for exemple:
 
 * to get the list of all available devices: `GET /device`
 * to get information about the second sensor of the first device: `GET /device/0/temp/1`
-* to set the speed of the first fan on the first device: `POST /device/0/fan/0/speed`
+* to set the speed of the first fan on the first device: `PUT /device/0/fan/0/config`
 
 > [!NOTE]
 > For every GET request, all fields are returned by default, but you can retrieve only specific ones with adding `?fields=` to the query with fields names, separated by a comma.

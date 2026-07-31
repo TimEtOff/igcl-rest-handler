@@ -9,6 +9,8 @@
 
 #include "../http_server.hpp"
 #include "../device/device.hpp"
+#include "boost/beast/http/status.hpp"
+#include <string>
 
 ctl_api_handle_t hAPIHandle;
 
@@ -76,45 +78,46 @@ path_cat(
 }
 
 http::response<json_body>
-bad_request(
-    beast::string_view why,
-    http::request<http::string_body> const& req)
+status_response(
+    const std::string &details,
+    http::request<http::string_body> const& req,
+    http::status status,
+    const std::string &statusStr)
 {
-    http::response<json_body> res{http::status::bad_request, req.version()};
+    http::response<json_body> res{status, req.version()};
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
     res.set(http::field::content_type, mime_type(".json"));
     res.keep_alive(req.keep_alive());
-    res.body() = {{"message", "400: Bad request"}, {"details", std::string(why)}};
-    res.prepare_payload();
-    return res;
-}
-
-http::response<json_body>
-not_found(
-    beast::string_view target,
-    http::request<http::string_body> const& req)
-{
-    http::response<json_body> res{http::status::not_found, req.version()};
-    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-    res.set(http::field::content_type, mime_type(".json"));
-    res.keep_alive(req.keep_alive());
-    res.body() = {{"message", "404: Not found"}, {"details", "The resource '" + std::string(target) + "' was not found."}};
+    res.body() = {
+        {"message", std::to_string(static_cast<unsigned>(status)) + (statusStr.empty() ? "" : (": " + statusStr))},
+        {"details", details}
+    };
     res.prepare_payload();
     return res;
 };
 
 http::response<json_body>
-server_error(
-    beast::string_view what,
+bad_request(
+    const std::string &why,
     http::request<http::string_body> const& req)
 {
-    http::response<json_body> res{http::status::internal_server_error, req.version()};
-    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-    res.set(http::field::content_type, mime_type(".json"));
-    res.keep_alive(req.keep_alive());
-    res.body() = {{"message", "500: Server error"}, {"details", "An error occurred: '" + std::string(what) + "'"}};
-    res.prepare_payload();
-    return res;
+    return status_response(why, req, http::status::bad_request, "Bad request");
+}
+
+http::response<json_body>
+not_found(
+    const std::string &target,
+    http::request<http::string_body> const& req)
+{
+    return status_response("The resource '" + target + "' was not found.", req, http::status::not_found, "Not found");
+};
+
+http::response<json_body>
+server_error(
+    const std::string &what,
+    http::request<http::string_body> const& req)
+{
+    return status_response("An error occurred: '" + what + "'", req, http::status::internal_server_error, "Server error");
 };
 
 std::string
@@ -305,6 +308,13 @@ handle_request(
         req.target()[0] != '/' ||
         req.target().find("..") != beast::string_view::npos)
         return bad_request("Illegal request-target", req);
+
+    if (!allowEdit)
+    {
+        if( req.method() != http::verb::get &&
+            req.method() != http::verb::head)
+            return status_response("Only GET and HEAD methods are enabled", req, http::status::forbidden, "Forbidden");
+    }
 
     std::string temp = req.target();
     request_elements_t reqElements;
@@ -536,6 +546,7 @@ public:
             fail(ec, "bind");
             return;
         }
+        serverPort = endpoint.port();
 
         // Start listening for connections
         acceptor_.listen(
@@ -551,6 +562,7 @@ public:
     void
     run()
     {
+        info("Started HTTP server on port " + std::to_string(static_cast<unsigned short>(serverPort)), "server");
         do_accept();
     }
 
@@ -558,6 +570,13 @@ private:
     void
     do_accept()
     {
+        // Stop accepting connections if server should shut down
+        if (!runServer)
+        {
+            acceptor_.close();
+            return;
+        }
+
         // The new connection gets its own strand
         acceptor_.async_accept(
             net::make_strand(ioc_),
@@ -591,20 +610,6 @@ private:
 
 int http_run(void)
 {
-    // Check command line arguments.
-    //if (argc != 5)
-    //{
-    //    std::cerr <<
-    //        "Usage: http-server-async <address> <port> <doc_root> <threads>\n" <<
-    //        "Example:\n" <<
-    //        "    http-server-async 0.0.0.0 8080 . 1\n";
-    //    return EXIT_FAILURE;
-    //}
-    //auto const address = net::ip::make_address(argv[1]);
-    //auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
-    //auto const doc_root = std::make_shared<std::string>(argv[3]);
-    //auto const threads = std::max<int>(1, std::atoi(argv[4]));
-
     ctl_init_args_t CtlInitArgs;
 
     CtlInitArgs.AppVersion = CTL_MAKE_VERSION(CTL_IMPL_MAJOR_VERSION, CTL_IMPL_MINOR_VERSION);
@@ -620,7 +625,7 @@ int http_run(void)
     } else {
 
         auto const address = net::ip::make_address("0.0.0.0");
-        auto const port = static_cast<unsigned short>(9738);
+        auto const port = static_cast<unsigned short>(serverPort);
         auto const doc_root = std::make_shared<std::string>(".");
         auto const threads = std::max<int>(1, 1);
 
@@ -642,8 +647,28 @@ int http_run(void)
             {
                 ioc.run();
             });
-        info("Starting HTTP server", "server");
+
+        // Monitor runServer flag in a separate thread and stop io_context when needed
+        std::thread monitor_thread([&ioc]
+        {
+            while (runServer)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+            ioc.stop();
+        });
+
         ioc.run();
+
+        // Wait for monitor thread to finish
+        monitor_thread.join();
+
+        // Wait for all worker threads to finish
+        for (auto& thread : v)
+        {
+            if (thread.joinable())
+                thread.join();
+        }
 
         return EXIT_SUCCESS;
     }

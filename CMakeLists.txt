@@ -4,8 +4,9 @@ project(igcl-rest-handler LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 include(cmake/CPM.cmake)
 
@@ -29,10 +30,12 @@ qt_add_executable(igcl-rest-handler
     src/device/device.hpp       src/device/device_handle.cpp
     src/device/temp/temp.hpp    src/device/temp/temp_handle.cpp
     src/device/fan/fan.hpp      src/device/fan/fan_handle.cpp
+    resources/resources.qrc
 )
 
 target_link_libraries(igcl-rest-handler
     PRIVATE
+        Qt6::Widgets
         magic_enum::magic_enum
         Boost::beast
         Boost::json

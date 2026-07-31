@@ -18,6 +18,7 @@
 #include <string>
 #include <sstream>
 #include <charconv>
+#include <future>
 #include <thread>
 #include <vector>
 #include <map>
@@ -59,22 +60,29 @@ info(const std::string &message, char const* what);
 
 int http_run(void);
 
+http::response<json_body>
+status_response(
+    const std::string &details,
+    http::request<http::string_body> const& req,
+    http::status status,
+    const std::string &statusStr = "");
+
 // Returns a bad request response
 http::response<json_body>
 bad_request(
-    beast::string_view why,
+    const std::string &why,
     http::request<http::string_body> const& req);
 
 // Returns a not found response
 http::response<json_body>
 not_found(
-    beast::string_view target,
+    const std::string &target,
     http::request<http::string_body> const& req);
 
 // Returns a server error response
 http::response<json_body>
 server_error(
-    beast::string_view what,
+    const std::string &what,
     http::request<http::string_body> const& req);
 
     std::string
@@ -98,6 +106,10 @@ http::message_generator
 create_response(
     http::request<http::string_body> const& req,
     json_body::value_type body);
+
+extern std::atomic<bool> runServer;
+extern std::atomic<unsigned short> serverPort;
+extern std::atomic<bool> allowEdit;
 
 std::string getReadableVersion(uint64_t integer);
 
