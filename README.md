@@ -1,4 +1,7 @@
-# IGCL REST Handler
+
+
+
+# <img src="./resources/images/app_64.png" alt="Logo" align="center"/> IGCL REST Handler
 
 ## Introduction
 
