@@ -14,9 +14,6 @@
 
 Returns a list of all frequency domains
 
-> [!WARNING]
-> Not yet implemented
-
 **Path**
 
 `GET /device/{i}/freq`
@@ -38,9 +35,6 @@ ctl_result_t ctlEnumFrequencyDomains(ctl_device_adapter_handle_t hDAhandle, uint
 ## Get frequency domain properties
 
 Get frequency properties - available frequencies.
-
-> [!WARNING]
-> Not yet implemented
 
 **Path**
 
@@ -67,9 +61,6 @@ ctl_result_t ctlFrequencyGetProperties(ctl_freq_handle_t hFrequency, ctl_freq_pr
 
 Get available non-overclocked hardware clock frequencies for the frequency domain.
 
-> [!WARNING]
-> Not yet implemented
-
 **Path**
 
 `GET /device/{i}/freq/{index}/clocks`
@@ -93,9 +84,6 @@ ctl_result_t ctlFrequencyGetAvailableClocks(ctl_freq_handle_t hFrequency, uint32
 
 Get current frequency limits.
 
-> [!WARNING]
-> Not yet implemented
-
 **Path**
 
 `GET /device/{i}/freq/{index}/range`
@@ -112,15 +100,12 @@ ctl_result_t ctlFrequencyGetRange(ctl_freq_handle_t hFrequency, ctl_freq_range_t
 | ---- | ----------- | ---- |
 | device_index | Requested device index. Should be the same as in request target | int |
 | freq_index | Requested frequence domain index. Should be the same as in request target | int |
-| min | The min frequency in MHz below which hardware frequency management will not request frequencies. A negative value indicates that no external minimum frequency limit is in effect. | float |
+| min | The min frequency in MHz below which hardware frequency management will not request frequencies. A negative value indicates that no external minimum frequency limit is in effect | float |
 | max | The max frequency in MHz above which hardware frequency management will not request frequencies. A negative number indicates that no external maximum frequency limit is in effect | float |
 
 ## Set frequency range
 
 Get current frequency limits.
-
-> [!WARNING]
-> Not yet implemented
 
 **Path**
 
@@ -149,9 +134,6 @@ Returns the same output as [`GET /device/{i}/freq/{index}/range`](#get-frequency
 
 Get current frequency state - frequency request, actual frequency, TDP limits.
 
-> [!WARNING]
-> Not yet implemented
-
 **Path**
 
 `GET /device/{i}/freq/{index}/state`
@@ -179,17 +161,15 @@ ctl_result_t ctlFrequencyGetState(ctl_freq_handle_t hFrequency, ctl_freq_state_t
 
 Get frequency throttle time.
 
-> [!WARNING]
-> Not yet implemented
-
 **Path**
 
-`GET /device/{i}/freq/{index}/throttle-time`
+`GET /device/{i}/freq/{index}/throttle`
 
 **IGCL equivalent**
 
 ```cpp
-ctl_result_t ctlFrequencyGetState(ctl_freq_handle_t hFrequency, ctl_freq_state_t *pState)
+ctl_result_t
+ctlFrequencyGetThrottleTime(ctl_freq_handle_t hFrequency, ctl_freq_throttle_time_t *pThrottleTime)
 ```
 
 **Fields**

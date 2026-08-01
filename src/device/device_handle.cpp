@@ -3,6 +3,7 @@
 #include "device.hpp"
 #include "temp/temp.hpp"
 #include "fan/fan.hpp"
+#include "freq/freq.hpp"
 
 json::object
 get_device_properties(
@@ -109,6 +110,8 @@ handle_device(
                 return handle_temp(std::move(req), reqElements, hDevice, body_base);
             else if (str_starts_with_erase(&reqElements.target, "fan/"))        // /device/{index}/fan
                 return handle_fan(std::move(req), reqElements, hDevice, body_base);
+            else if (str_starts_with_erase(&reqElements.target, "freq/"))       // /device/{index}/freq
+                return handle_freq(std::move(req), reqElements, hDevice, body_base);
             else
                 return not_found(req.target(), req);
 
