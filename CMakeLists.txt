@@ -23,9 +23,7 @@ CPMAddPackage(
 
 qt_standard_project_setup()
 
-#TODO Mac/Linux executable icon & deployement
-
-qt_add_executable(igcl-rest-handler
+qt_add_executable(igcl-rest-handler WIN32
     src/main.cpp
     igcl/igcl_api.h             igcl/cApiWrapper.cpp
     src/http_server.hpp         src/http/http_server.cpp        src/http/result_enum_cast.cpp
@@ -63,6 +61,8 @@ if(WIN32)
     else()
         message(WARNING "windeployqt was not found, so the executable may require Qt to be on PATH at runtime")
     endif()
+else()
+    message(FATAL_ERROR "unsupported platform")
 endif()
 
 install(TARGETS igcl-rest-handler

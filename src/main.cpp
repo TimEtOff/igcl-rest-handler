@@ -1,8 +1,8 @@
 #include <atomic>
-#include <charconv>
 #include <chrono>
 #include <cstdint>
 #include <future>
+#include <cstdio>
 #include <magic_enum/magic_enum.hpp>
 #include <QApplication>
 #include <QSystemTrayIcon>
@@ -36,6 +36,19 @@ std::future<int> httpServerThread;
 std::atomic<bool> runServer;
 std::atomic<unsigned short> serverPort;
 std::atomic<bool> allowEdit;
+
+void attachParentConsole()
+{
+    if (!AttachConsole(ATTACH_PARENT_PROCESS)) {
+        return;
+    }
+
+    FILE *dummy = nullptr;
+    freopen_s(&dummy, "CONOUT$", "w", stdout);
+    freopen_s(&dummy, "CONOUT$", "w", stderr);
+    setvbuf(stdout, nullptr, _IONBF, 0);
+    setvbuf(stderr, nullptr, _IONBF, 0);
+}
 
 std::string getReadableVersion(uint64_t integer)
 {
@@ -97,6 +110,8 @@ void closeApp()
 
 int main(int argc, char *argv[])
 {
+    attachParentConsole();
+
     app = new QApplication(argc, argv);
     app->setQuitOnLastWindowClosed(false);
     appIcon = new QIcon(":/images/app.ico");
