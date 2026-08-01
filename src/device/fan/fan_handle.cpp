@@ -24,6 +24,8 @@ get_fan_properties(
     if (ctlResult != CTL_RESULT_SUCCESS)
         return res;
 
+    pFan.maxRPM = 1200;
+
     add_value(res, query, "can_control"     , pFan.canControl);
     add_value(res, query, "supported_modes" , pFan.supportedModes); // TODO Change int to array of all enabled flags
     add_value(res, query, "supported_units" , pFan.supportedUnits);
@@ -166,7 +168,7 @@ edit_fan_config(
                 if (table.numPoints >= 0)
                 {
                     if (table.numPoints > tableArray.size() || table.numPoints > CTL_FAN_TEMP_SPEED_PAIR_COUNT)
-                        return "Body: table.num_points is higher than table.table size";
+                        return "Body: table.num_points is larger than table.table size";
 
                     for (size_t i = 0; i < table.numPoints; i++) {
                         ctl_fan_temp_speed_t &tempSpeed = table.table[i];

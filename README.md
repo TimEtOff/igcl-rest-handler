@@ -1,5 +1,5 @@
 
-# <img src="./resources/images/app_64.png" alt="Logo" align="center"/> IGCL REST Handler
+# IGCL REST Handler
 
 ## Introduction
 
@@ -45,3 +45,9 @@ For the details of every methods, see related handle page:
   * [Memory modules 🢱](src/device/memory/memory.md)
   * [Engine groups 🢱](src/device/engine/engine.md)
   * [Display output 🢱](src/device/display/display.md)
+
+## Known issues
+
+* All properties having a `"can_control"` field will return `false` if the app is not started as administrator.
+* For device fans only supporting RPM as units, if `"max_rpm"` field is `-1` (unknown), it will be impossible to change the fan config.
+* If settings are changed in Intel Graphics Software, they may not always mirror through IGCL.

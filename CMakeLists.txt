@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.16)
 
 project(igcl-rest-handler LANGUAGES CXX)
 
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    message(WARNING "The IGCL requires 64-bit for Performance & Telemetry API's. This build will probably not work properly.")
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTORCC ON)
@@ -30,6 +34,7 @@ qt_add_executable(igcl-rest-handler WIN32
     src/device/device.hpp       src/device/device_handle.cpp
     src/device/temp/temp.hpp    src/device/temp/temp_handle.cpp
     src/device/fan/fan.hpp      src/device/fan/fan_handle.cpp
+    src/device/freq/freq.hpp    src/device/freq/freq_handle.cpp
     resources/resources.qrc     resources/images/app.rc
 )
 
