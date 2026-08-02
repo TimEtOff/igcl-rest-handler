@@ -203,7 +203,7 @@ handle_freq(
 
     if (ctlResult != CTL_RESULT_SUCCESS) {
         free(hFreqs);
-        return server_error("ctlEnumFrequencyDomains: " + std::string(magic_enum::enum_name(ctlResult)), req);
+        return server_error("ctlEnumFrequencyDomains: " + std::string(enum_name(ctlResult)), req);
     }
 
     if (!reqElements.target.empty()) {

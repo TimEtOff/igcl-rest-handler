@@ -61,7 +61,7 @@ handle_temp(
 
     if (ctlResult != CTL_RESULT_SUCCESS) {
         free(hTemps);
-        return server_error("ctlEnumTemperatureSensors: " + std::string(magic_enum::enum_name(ctlResult)), req);
+        return server_error("ctlEnumTemperatureSensors: " + std::string(enum_name(ctlResult)), req);
     }
 
     if (!reqElements.target.empty()) {
@@ -91,9 +91,8 @@ handle_temp(
                     req.method() != http::verb::head)
                     return bad_request("Unknown HTTP-method", req);
 
-                for (auto& prop : get_temp_state(hTemp, ctlResult, reqElements.query)) {
+                for (auto& prop : get_temp_state(hTemp, ctlResult, reqElements.query))
                     body_base[prop.key()] = prop.value();
-                }
             } else
                 return not_found(req.target(), req);
 
@@ -102,9 +101,8 @@ handle_temp(
                 req.method() != http::verb::head)
                 return bad_request("Unknown HTTP-method", req);
 
-            for (auto& prop : get_temp_properties(hTemp, ctlResult, reqElements.query)) {
+            for (auto& prop : get_temp_properties(hTemp, ctlResult, reqElements.query))
                 body_base[prop.key()] = prop.value();
-            }
         }
 
         if (ctlResult == CTL_RESULT_SUCCESS)

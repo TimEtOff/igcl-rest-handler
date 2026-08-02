@@ -24,8 +24,6 @@ get_fan_properties(
     if (ctlResult != CTL_RESULT_SUCCESS)
         return res;
 
-    pFan.maxRPM = 1200;
-
     add_value(res, query, "can_control"     , pFan.canControl);
     add_value(res, query, "supported_modes" , pFan.supportedModes); // TODO Change int to array of all enabled flags
     add_value(res, query, "supported_units" , pFan.supportedUnits);
@@ -224,7 +222,7 @@ handle_fan(
 
     if (ctlResult != CTL_RESULT_SUCCESS) {
         free(hFans);
-        return server_error("ctlEnumFans: " + std::string(magic_enum::enum_name(ctlResult)), req);
+        return server_error("ctlEnumFans: " + std::string(enum_name(ctlResult)), req);
     }
 
     if (!reqElements.target.empty()) {
@@ -254,9 +252,9 @@ handle_fan(
                     req.method() != http::verb::head)
                     return bad_request("Unknown HTTP-method", req);
 
-                for (auto& prop : get_fan_state(hFan, ctlResult, reqElements.query)) {
+                for (auto& prop : get_fan_state(hFan, ctlResult, reqElements.query))
                     body_base[prop.key()] = prop.value();
-                }
+
             } else if (str_starts_with_erase(&reqElements.target, "config/") && reqElements.target.empty()) {
                 if ( req.method() == http::verb::put) {             // /device/{i}/fan/{index}/config
                     std::string result = edit_fan_config(hFan, ctlResult, reqElements);
@@ -269,9 +267,8 @@ handle_fan(
                             req.method() != http::verb::head)
                     return bad_request("Unknown HTTP-method", req);
 
-                for (auto& prop : get_fan_config(hFan, ctlResult, reqElements.query)) {
+                for (auto& prop : get_fan_config(hFan, ctlResult, reqElements.query))
                     body_base[prop.key()] = prop.value();
-                }
 
              } else
                 return not_found(req.target(), req);
@@ -281,9 +278,8 @@ handle_fan(
                 req.method() != http::verb::head)
                 return bad_request("Unknown HTTP-method", req);
 
-            for (auto& prop : get_fan_properties(hFan, ctlResult, reqElements.query)) {
+            for (auto& prop : get_fan_properties(hFan, ctlResult, reqElements.query))
                 body_base[prop.key()] = prop.value();
-            }
         }
 
         if (ctlResult == CTL_RESULT_SUCCESS)
