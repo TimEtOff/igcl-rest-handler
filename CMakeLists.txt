@@ -35,6 +35,7 @@ qt_add_executable(igcl-rest-handler WIN32
     src/device/temp/temp.hpp    src/device/temp/temp_handle.cpp
     src/device/fan/fan.hpp      src/device/fan/fan_handle.cpp
     src/device/freq/freq.hpp    src/device/freq/freq_handle.cpp
+    src/device/power/power.hpp  src/device/power/power_handle.cpp
     resources/resources.qrc     resources/images/app.rc
 )
 
