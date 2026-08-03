@@ -1,6 +1,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <fstream>
 #include <future>
 #include <cstdio>
 #include <magic_enum/magic_enum.hpp>
@@ -8,6 +9,7 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QInputDialog>
+#include <memory>
 #include <qapplication.h>
 #include <qcoreapplication.h>
 #include <qdialog.h>
@@ -36,6 +38,7 @@ std::future<int> httpServerThread;
 std::atomic<bool> runServer;
 std::atomic<unsigned short> serverPort;
 std::atomic<bool> allowEdit;
+std::shared_ptr<std::basic_ofstream<char, std::char_traits<char>>> appLog;
 
 void attachParentConsole()
 {
@@ -63,6 +66,25 @@ std::string getReadableVersion(uint64_t integer)
     return str;
 }
 
+void initLog()
+{
+    std::string logPath = (QApplication::applicationDirPath() + "/igcl-rest-handler.log").toStdString();
+
+    std::ifstream oldLogR(logPath);
+    if (oldLogR) {
+        std::ofstream oldLogW(logPath + ".old");
+
+        std::string line;
+        while (std::getline(oldLogR, line))
+            oldLogW << line << std::endl;
+
+        oldLogW.close();
+    }
+    oldLogR.close();
+
+    appLog = std::make_shared<std::ofstream>(logPath);
+}
+
 void startServer()
 {
     runServer = true;
@@ -87,7 +109,6 @@ void changePort()
 
     if (dialog->exec() == QDialog::Accepted) {
         runServer = false;
-        info("Stopped HTTP server", "server");
         serverPort = dialog->intValue();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1500));
@@ -104,8 +125,11 @@ void toggledEdit(bool enabled)
 void closeApp()
 {
     runServer = false;
+    int serverRes = httpServerThread.get();
+
     info("Closing app...", "app");
-    app->exit(httpServerThread.get());
+    appLog->close();
+    app->exit(serverRes);
 }
 
 int main(int argc, char *argv[])
@@ -139,6 +163,8 @@ int main(int argc, char *argv[])
     startServer();
 
     allowEditAction->setChecked(allowEdit);
+
+    initLog();
 
     trayIcon->show();
     return app->exec();

@@ -10,6 +10,7 @@
 #include "../http_server.hpp"
 #include "../device/device.hpp"
 #include "boost/beast/http/status.hpp"
+#include <sstream>
 #include <string>
 
 ctl_api_handle_t hAPIHandle;
@@ -353,19 +354,40 @@ timestamp()
 void
 fail(beast::error_code ec, char const* what)
 {
-    std::cerr << timestamp() << "[FAIL]" << " [" << what << "] " << ec.message() << std::endl;
+    std::stringstream text;
+    text << timestamp() << "[FAIL]" << " [" << what << "] " << ec.message() << std::endl;
+    std::cerr << text.str();
+    if (appLog->is_open())
+    {
+        *appLog << text.str();
+        appLog->flush();
+    }
 }
 
 void
 fail(const std::string &message, char const* what)
 {
-    std::cerr << timestamp() << "[FAIL]" << " ["  << what << "] " << message << std::endl;
+    std::stringstream text;
+    text << timestamp() << "[FAIL]" << " ["  << what << "] " << message << std::endl;
+    std::cerr << text.str();
+    if (appLog->is_open())
+    {
+        *appLog << text.str();
+        appLog->flush();
+    }
 }
 
 void
 info(const std::string &message, char const* what)
 {
-    std::cout << timestamp() << "[INFO]" << " ["  << what << "] " << message << std::endl;
+    std::stringstream text;
+    text << timestamp() << "[INFO]" << " ["  << what << "] " << message << std::endl;
+    std::cout << text.str();
+    if (appLog->is_open())
+    {
+        *appLog << text.str();
+        appLog->flush();
+    }
 }
 
 // Handles an HTTP server connection
@@ -655,6 +677,7 @@ int http_run(void)
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
+            info("Stopping HTTP server", "server");
             ioc.stop();
         });
 

@@ -13,6 +13,7 @@
 #include <functional>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include <ctime>
 #include <memory>
 #include <string>
@@ -110,6 +111,7 @@ create_response(
 extern std::atomic<bool> runServer;
 extern std::atomic<unsigned short> serverPort;
 extern std::atomic<bool> allowEdit;
+extern std::shared_ptr<std::basic_ofstream<char, std::char_traits<char>>> appLog;
 
 std::string getReadableVersion(uint64_t integer);
 
