@@ -10,9 +10,19 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTORCC ON)
 
+# If using Qt6, override DEFAULT_MAJOR_VERSION
+set(QT_DEFAULT_MAJOR_VERSION 6 CACHE STRING "Qt version to use, defaults to 6")
+set(QAPPLICATION_CLASS QApplication CACHE STRING "Inheritance class for SingleApplication")
+
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 include(cmake/CPM.cmake)
+
+CPMAddPackage(
+    NAME singleapplication
+    GITHUB_REPOSITORY itay-grudev/SingleApplication
+    GIT_TAG v3.5.6
+)
 
 CPMAddPackage(
     NAME magic_enum
@@ -39,12 +49,12 @@ qt_add_executable(igcl-rest-handler WIN32
     resources/resources.qrc     resources/images/app.rc
 )
 
-target_link_libraries(igcl-rest-handler
-    PRIVATE
-        Qt6::Widgets
-        magic_enum::magic_enum
-        Boost::beast
-        Boost::json
+target_link_libraries(igcl-rest-handler PRIVATE
+    Qt6::Widgets
+    magic_enum::magic_enum
+    Boost::beast
+    Boost::json
+    SingleApplication::SingleApplication
     ws2_32
     mswsock
 )

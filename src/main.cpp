@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <magic_enum/magic_enum.hpp>
 #include <QApplication>
+#include <SingleApplication.h>
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QInputDialog>
@@ -24,8 +25,7 @@
 
 #define APP_VERSION "v0.1.0"
 
-
-QApplication *app;
+SingleApplication *app;
 QIcon *appIcon;
 QSystemTrayIcon *trayIcon;
 QMenu *menu;
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 {
     attachParentConsole();
 
-    app = new QApplication(argc, argv);
+    app = new SingleApplication(argc, argv);
     app->setQuitOnLastWindowClosed(false);
     appIcon = new QIcon(":/images/app.ico");
 
