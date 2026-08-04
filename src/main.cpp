@@ -1,5 +1,6 @@
 #include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <future>
@@ -10,15 +11,13 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QInputDialog>
+#include <QMessageBox>
+#include <QDesktopServices>
+#include <QUrl>
 #include <memory>
-#include <qapplication.h>
-#include <qcoreapplication.h>
 #include <qdialog.h>
-#include <qicon.h>
 #include <qinputdialog.h>
-#include <qsystemtrayicon.h>
-#include <qurl.h>
-#include <qwidget.h>
+#include <qmessagebox.h>
 #include <string>
 #include <thread>
 #include "http_server.hpp"
@@ -31,6 +30,8 @@ QSystemTrayIcon *trayIcon;
 QMenu *menu;
 QAction *portAction;
 QAction *allowEditAction;
+QAction *allowOverclockAction;
+QAction *aboutAction;
 QAction *closeAction;
 
 std::future<int> httpServerThread;
@@ -38,6 +39,7 @@ std::future<int> httpServerThread;
 std::atomic<bool> runServer;
 std::atomic<unsigned short> serverPort;
 std::atomic<bool> allowEdit;
+std::atomic<bool> allowOverclock;
 std::shared_ptr<std::basic_ofstream<char, std::char_traits<char>>> appLog;
 
 void attachParentConsole()
@@ -122,6 +124,27 @@ void toggledEdit(bool enabled)
     allowEdit = enabled;
 }
 
+void toggledOverclock(bool enabled)
+{
+    if (enabled) {
+        int validation = QMessageBox::question(nullptr,
+            "Overclocking",
+            "Overclocking can cause system instability and reduce your device lifespan. Enable it only if you know what you are doing. Do you want to allow it ?");
+        if (validation == QMessageBox::Yes)
+            allowOverclock = true;
+        else
+            allowOverclock = false;
+    } else
+        allowOverclock = false;
+
+    allowOverclockAction->setChecked(allowOverclock);
+}
+
+void openGithubPage()
+{
+    QDesktopServices::openUrl(QUrl("https://github.com/TimEtOff/igcl-rest-handler"));
+}
+
 void closeApp()
 {
     runServer = false;
@@ -145,9 +168,21 @@ int main(int argc, char *argv[])
     portAction = menu->addAction("&Port: ");
     QObject::connect(portAction, &QAction::triggered, &changePort);
 
+    menu->addSeparator();
+
     allowEditAction = menu->addAction("Allow &edits");
     allowEditAction->setCheckable(true);
     QObject::connect(allowEditAction, &QAction::toggled, &toggledEdit);
+
+    allowOverclockAction = menu->addAction("Allow &overclocking");
+    allowOverclockAction->setCheckable(true);
+    allowOverclockAction->setChecked(false);
+    QObject::connect(allowOverclockAction, &QAction::toggled, &toggledOverclock);
+
+    menu->addSeparator();
+
+    aboutAction = menu->addAction("&About");
+    QObject::connect(aboutAction, &QAction::triggered, &openGithubPage);
 
     closeAction = menu->addAction("&Close");
     QObject::connect(closeAction, &QAction::triggered, &closeApp);

@@ -326,11 +326,13 @@ handle_request(
     if (reqElements.target.back() != '/')
         reqElements.target += '/';
 
-    if (str_starts_with_erase(&reqElements.target, "/device/"))
-    {
+    if (str_starts_with_erase(&reqElements.target, "/device/")){
         return handle_device(std::move(req), reqElements, hAPIHandle);
-    } else
-    {
+    }
+    else if (str_starts_with_erase(&reqElements.target, "/") && reqElements.target.empty()) {
+        return status_response("Server up", req, http::status::ok, "Ok");
+    }
+    else {
         return not_found(req.target(), req);
     }
 }
