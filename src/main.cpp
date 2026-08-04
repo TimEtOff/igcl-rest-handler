@@ -18,6 +18,7 @@
 #include <qdialog.h>
 #include <qinputdialog.h>
 #include <qmessagebox.h>
+#include <qobject.h>
 #include <string>
 #include <thread>
 #include "http_server.hpp"
@@ -85,6 +86,25 @@ void initLog()
     oldLogR.close();
 
     appLog = std::make_shared<std::ofstream>(logPath);
+}
+
+// Source - https://stackoverflow.com/a/8196291
+// Posted by Beached
+// Retrieved 2026-08-05, License - CC BY-SA 3.0
+BOOL IsElevated( ) {
+    BOOL fRet = FALSE;
+    HANDLE hToken = NULL;
+    if( OpenProcessToken( GetCurrentProcess( ),TOKEN_QUERY,&hToken ) ) {
+        TOKEN_ELEVATION Elevation;
+        DWORD cbSize = sizeof( TOKEN_ELEVATION );
+        if( GetTokenInformation( hToken, TokenElevation, &Elevation, sizeof( Elevation ), &cbSize ) ) {
+            fRet = Elevation.TokenIsElevated;
+        }
+    }
+    if( hToken ) {
+        CloseHandle( hToken );
+    }
+    return fRet;
 }
 
 void startServer()
@@ -172,6 +192,7 @@ int main(int argc, char *argv[])
 
     allowEditAction = menu->addAction("Allow &edits");
     allowEditAction->setCheckable(true);
+    allowEditAction->setChecked(allowEdit);
     QObject::connect(allowEditAction, &QAction::toggled, &toggledEdit);
 
     allowOverclockAction = menu->addAction("Allow &overclocking");
@@ -200,6 +221,14 @@ int main(int argc, char *argv[])
     allowEditAction->setChecked(allowEdit);
 
     initLog();
+
+    if (IsElevated())
+        info("App started as administrator", "app");
+    else {
+        QMessageBox::warning(nullptr, "Not started as administrator",
+            "IGCL REST Handler was not started as administator. This might cause some features to not work correctly.");
+        info("App not started as administrator. Some issues might appear", "app");
+    }
 
     trayIcon->show();
     return app->exec();
