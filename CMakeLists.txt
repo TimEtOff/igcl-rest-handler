@@ -39,14 +39,15 @@ qt_standard_project_setup()
 
 qt_add_executable(igcl-rest-handler WIN32
     src/main.cpp
-    igcl/igcl_api.h             igcl/cApiWrapper.cpp
-    src/http_server.hpp         src/http/http_server.cpp        src/http/result_enum_cast.cpp
-    src/device/device.hpp       src/device/device_handle.cpp
-    src/device/temp/temp.hpp    src/device/temp/temp_handle.cpp
-    src/device/fan/fan.hpp      src/device/fan/fan_handle.cpp
-    src/device/freq/freq.hpp    src/device/freq/freq_handle.cpp
-    src/device/power/power.hpp  src/device/power/power_handle.cpp
-    resources/resources.qrc     resources/images/app.rc
+    igcl/igcl_api.h                 igcl/cApiWrapper.cpp
+    src/http_server.hpp             src/http/http_server.cpp        src/http/result_enum_cast.cpp
+    src/device/device.hpp           src/device/device_handle.cpp
+    src/device/temp/temp.hpp        src/device/temp/temp_handle.cpp
+    src/device/fan/fan.hpp          src/device/fan/fan_handle.cpp
+    src/device/freq/freq.hpp        src/device/freq/freq_handle.cpp
+    src/device/power/power.hpp      src/device/power/power_handle.cpp
+    src/device/memory/memory.hpp    src/device/memory/memory_handle.cpp
+    resources/resources.qrc         resources/images/app.rc
 )
 
 target_link_libraries(igcl-rest-handler PRIVATE
